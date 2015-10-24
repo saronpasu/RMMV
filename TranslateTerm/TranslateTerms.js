@@ -6,7 +6,7 @@
  * @plugindesc Terms change translate your language.
  * @author saronpasu
  *
- * @version 0.0.1
+ * @version 0.0.2
  *
  * @help
  *
