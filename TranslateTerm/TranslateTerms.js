@@ -98,6 +98,25 @@ DataManager._databaseFiles.push(
     { name: '$terms_ja_JP',      src: '../js/plugins/terms/ja_JP.json'}
 );
 
+DataManager.loadDatabase = function() {
+    var test = this.isBattleTest() || this.isEventTest();
+    var prefix = test ? 'Test_' : '';
+    for (var i = 0; i < this._databaseFiles.length; i++) {
+        var name = this._databaseFiles[i].name;
+        var src = this._databaseFiles[i].src;
+        if (test == true ) {
+            file = src.replace(/(\w+)\.json/, "Test_$&" )
+            this.loadDataFile(name, file);
+        } else {
+            this.loadDataFile(name, prefix + src);
+        }
+    }
+    if (this.isEventTest()) {
+        this.loadDataFile('$testEvent', prefix + 'Event.json');
+    }
+};
+
+
 /*
   Override rpg_manager.js TextManager
 */
