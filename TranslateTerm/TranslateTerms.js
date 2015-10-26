@@ -6,7 +6,7 @@
  * @plugindesc Terms change translate your language.
  * @author saronpasu
  *
- * @version 0.0.2
+ * @version 0.0.3
  *
  * @help
  *
@@ -64,13 +64,20 @@
             this.clearLanguage();
         }
         this._LanguageSettings = language;
-    };
-
-    Game_System.prototype.setLanguge = function(language) {
-        if (!this._LanguageSettings) {
-            this.clearLanguage();
+        switch(language) {
+          case 'auto':
+            $dataSystem.locale = (navigator.browserLanguage || navigator.language || navigator.userLanguage).substr(0,5);
+            break;
+          case 'ja':
+            $dataSystem.locale = 'ja_JP';
+            break;
+          case 'en':
+            $dataSystem.locale = 'en_US';
+            break;
+          default:
+            $dataSystem.locale = 'en_US';
+            break;
         }
-        this._LanguageSettings = language;
     };
 
     Game_System.prototype.getLanguage = function() {
@@ -87,6 +94,7 @@
     Game_System.prototype.clearLanguage = function() {
         this._LanguageSettings = 'auto';
         ConfigManager['language'] = 'auto';
+        $dataSystem.locale = (navigator.browserLanguage || navigator.language || navigator.userLanguage).substr(0,5);
     };
 
 /*
