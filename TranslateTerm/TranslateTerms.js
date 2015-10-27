@@ -60,7 +60,7 @@
     };
 
     Game_System.prototype.setLanguge = function(language) {
-        if (ConfigManager['language'] == undefined) {
+        if (ConfigManager['language'] === undefined) {
             this.clearLanguage();
         }
         this._LanguageSettings = language;
@@ -81,10 +81,10 @@
     };
 
     Game_System.prototype.getLanguage = function() {
-        if (ConfigManager['language'] == undefined) {
+        if (ConfigManager['language'] === undefined) {
             this.clearLanguage();
         }
-        if (ConfigManager['language'] == 'auto') {
+        if (ConfigManager['language'] === 'auto') {
             $dataSystem.locale = (navigator.browserLanguage || navigator.language || navigator.userLanguage).substr(0,5);
             return (navigator.browserLanguage || navigator.language || navigator.userLanguage).substr(0,2);
         } else {
@@ -135,16 +135,12 @@ TextManager.basic = function(basicId) {
     switch (Game_System.prototype.getLanguage()) {
         case 'default':
             return $dataSystem.terms.basic[basicId] || '';
-            break;
         case 'ja':
             return $terms_ja_JP.basic[basicId] || '';
-            break;
         case 'en':
             return $terms_en_US.basic[basicId] || '';
-            break;
         default:
             return $dataSystem.terms.basic[basicId] || '';
-            break;
     }
 };
 
@@ -152,16 +148,12 @@ TextManager.param = function(paramId) {
     switch (Game_System.prototype.getLanguage()) {
         case 'default':
             return $dataSystem.terms.params[paramId] || '';
-            break;
         case 'ja':
             return $terms_ja_JP.params[paramId] || '';
-            break;
         case 'en':
             return $terms_en_US.params[paramId] || '';
-            break;
         default:
             return $dataSystem.terms.params[paramId] || '';
-            break;
     }
 };
 
@@ -169,17 +161,13 @@ TextManager.command = function(commandId) {
     switch (Game_System.prototype.getLanguage()) {
         case 'default':
             return $dataSystem.terms.commands[commandId] || '';
-            break;
         case 'ja':
             return $terms_ja_JP.commands[commandId] || '';
-            break;
         case 'en':
             return $terms_en_US.commands[commandId] || '';
-            break;
         default:
 console.log("call");
             return $dataSystem.terms.commands[commandId] || '';
-            break;
     }
 };
 
@@ -187,16 +175,12 @@ TextManager.message = function(messageId) {
     switch (Game_System.prototype.getLanguage()) {
         case 'default':
             return $dataSystem.terms.messages[messageId] || '';
-            break;
         case 'ja':
             return $terms_ja_JP.messages[messageId] || '';
-            break;
         case 'en':
             return $terms_en_US.messages[messageId] || '';
-            break;
         default:
             return $dataSystem.terms.messages[messageId] || '';
-            break;
     }
 };
 
@@ -270,19 +254,14 @@ Window_Options.prototype.languageStatusText = function(value) {
     switch(value) {
         case 'auto':
             return 'auto';
-            break;
         case 'ja':
             return '日本語';
-            break;
         case 'en':
             return 'English';
-            break;
         case 'default':
             return 'default';
-            break;
         default:
             return 'default';
-            break;
     };
 };
 
@@ -363,7 +342,7 @@ Window_Options.prototype.setConfigValue = function(symbol, volume) {
     ConfigManager[symbol] = volume;
     if (symbol == 'language') {
         Game_System.prototype.setLanguge(volume);
-    };
+    }
 };
 
 
