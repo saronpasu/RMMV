@@ -85,8 +85,10 @@
             this.clearLanguage();
         }
         if (ConfigManager['language'] == 'auto') {
+            $dataSystem.locale = (navigator.browserLanguage || navigator.language || navigator.userLanguage).substr(0,5);
             return (navigator.browserLanguage || navigator.language || navigator.userLanguage).substr(0,2);
         } else {
+            $dataSystem.locale = ConfigManager['language'];
             return ConfigManager['language'];
         }
     };
