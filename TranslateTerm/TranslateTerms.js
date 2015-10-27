@@ -6,7 +6,7 @@
  * @plugindesc Terms change translate your language.
  * @author saronpasu
  *
- * @version 0.0.3
+ * @version 0.0.4
  *
  * @help
  *
@@ -60,7 +60,7 @@
     };
 
     Game_System.prototype.setLanguge = function(language) {
-        if (!this._LanguageSettings) {
+        if (ConfigManager['language'] == undefined) {
             this.clearLanguage();
         }
         this._LanguageSettings = language;
@@ -81,13 +81,13 @@
     };
 
     Game_System.prototype.getLanguage = function() {
-        if (!this._LanguageSettings) {
+        if (ConfigManager['language'] == undefined) {
             this.clearLanguage();
         }
-        if (this._LanguageSettings == 'auto') {
+        if (ConfigManager['language'] == 'auto') {
             return (navigator.browserLanguage || navigator.language || navigator.userLanguage).substr(0,2);
         } else {
-            return this._LanguageSettings;
+            return ConfigManager['language'];
         }
     };
 
@@ -175,6 +175,7 @@ TextManager.command = function(commandId) {
             return $terms_en_US.commands[commandId] || '';
             break;
         default:
+console.log("call");
             return $dataSystem.terms.commands[commandId] || '';
             break;
     }

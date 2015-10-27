@@ -23,4 +23,8 @@ version 0.0.2
 version 0.0.3
 - $dataSystem.localeも変更するように修正。
 
+version 0.0.4
+- オプション設定が正しく読み込まれない不具合を修正。
+
+
 
