@@ -6,11 +6,20 @@
  * @plugindesc Text To Speech plugin. work only native browser.
  * @author saronpasu
  *
- * @version 0.0.1
+ * @version 0.0.2
  *
  * @param Run TTS
  * @desc Escape code for TTS speak.
  * @default T
+ *
+ * @param Stop TTS
+ * @desc Escape code for TTS stop.
+ * @default TT
+ *
+ * @param noInterrupt
+ * @desc Yet speaking, wait speaking finish or not.
+ * if true, next speech start after current speaking finish.
+ * @default false
  *
  * @help
  *
@@ -38,6 +47,15 @@
  * @desc 音声読み上げ(TTS)実行のエスケープコード。
  * @default T
  *
+ * @param Stop TTS
+ * @desc 音声読み上げ(TTS)停止のエスケープコード。
+ * @default TT
+ *
+ * @param noInterrupt
+ * @desc 次の読み上げを始める時に、まだ読み上げ中の場合は読み上げを中止させるかどうか。
+ * true true をセットすると前の読み上げが終了した後に、次の読み上げが始まります。
+ * @default false
+ *
  * プラグインコマンド:
  *   TTS isSupport            # TTSが実行可能かどうか
  *   TTS init                 # TTS の初期化
@@ -58,8 +76,11 @@
     speechSynthesis.getVoices(); // 1st call return [] on chrome.
 
     var parameters = PluginManager.parameters('TTS');
-    var runTTS = String(parameters['TTS Speak'] || 'T');
+    var runTTS = String(parameters['Run TTS'] || 'T');
+    var stopTTS = String(parameters['Stop TTS'] || 'TT');
+    var noInterrupt = Boolean(parameters['noInterrupt'] || false);
     var runTTS_Pattern = runTTS ? new RegExp('\x1b' + runTTS + '\\[(.+)\\]', 'gi') : null;
+    var stopTTS_Pattern = stopTTS ? new RegExp('\x1b' + stopTTS , 'gi') : null;
     var TTS = null;
 
     var _Game_Interpreter_pluginCommand =
@@ -72,16 +93,27 @@
                 return $gameSystem.isTTS();
             case 'init':
                 TTS = $gameSystem.initTTS();
+                break;
             case 'setVolume':
                 $gameSystem.setTTS_Volume(args[1]);
+                break;
             case 'setRate':
                 $gameSystem.setTTS_Rate(args[1]);
+                break;
             case 'setPitch':
                 $gameSystem.setTTS_Pitch(args[1]);
+                break;
             case 'setLang':
                 $gameSystem.setTTS_Language(args[1]);
+                break;
             case 'speak':
                 $gameSystem.speakTTS(args[1]);
+                break;
+            case 'isSpeak':
+                return $gameSystem.isSpeakTTS();
+            case 'stop':
+                $gameSystem.stopTTS();
+                break;
             }
         }
     };
@@ -158,6 +190,22 @@
         }
     };
 
+    Game_System.prototype.isSpeakTTS = function() {
+        if (!$gameSystem.isTTS()) {
+            return false;
+        }
+        return speechSynthesis.speeking;
+    };
+
+    Game_System.prototype.stopTTS = function() {
+        if (!$gameSystem.isTTS()) {
+            return false;
+        }
+        if ($gameSystem.isSpeakTTS) {
+            speechSynthesis.cancel();
+        };
+    };
+
     Game_System.prototype.speakTTS = function(text) {
         if (!$gameSystem.isTTS()) {
             return false;
@@ -166,6 +214,9 @@
             TTS = $gameSystem.initTTS();
         }
         TTS.text = text;
+        if (!noInterrupt && speechSynthesis.speaking) {
+            $gameSystem.stopTTS();
+        }
         speechSynthesis.speak(TTS);
     };
 
@@ -175,6 +226,12 @@
         if (runTTS) {
            text = text.replace(runTTS_Pattern, function() {
                $gameSystem.speakTTS(arguments[1]);
+               return "";
+           }.bind(this));
+        }
+        if (stopTTS) {
+           text = text.replace(stopTTS_Pattern, function() {
+               $gameSystem.stopTTS();
                return "";
            }.bind(this));
         }
