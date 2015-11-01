@@ -2,7 +2,7 @@
 オーダー内容は「スキル使用前にコモンイベント」です。
 
 使い方は、 js/plugins フォルダへ入れてプラグインマネージャーで登録する。
-そのあと、適当なコモンイベントを登録して、スキルのメモに「<before:CommmonEvent:1>」とか書く。
+そのあと、適当なコモンイベントを登録して、スキルのメモに「\< before:CommmonEvent:1 \>」とか書く。
 
 詳しい処理は CallCommonEventBeforeSkill.js を見て下さい。
 
