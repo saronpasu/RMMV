@@ -91,7 +91,7 @@
  *   Stop   Record: touch 'Stop Record'   button, on save and stop.
  *   Delete Record: touch 'Delete Record' button.
  *
- * == Play Record shift ==
+ * == Play Record control ==
  *   Start  Play Record: touch 'Start Play Record'  button.
  *   Pause  Play Record: touch 'Pause'  button.
  *   Resume Play Record: touch 'Resume' button.
