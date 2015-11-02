@@ -84,7 +84,7 @@
  * --- control for App ---
  * This plugin 'on' always visible 'InputRecorder' control.
  *
- * == Record shift ==
+ * == Record control ==
  *   Start  Record: touch 'Start Record'  button.
  *   Pause  Record: touch 'Pause'  button, on pause record.
  *   Resume Record: touch 'Resume' button, on resume record.
