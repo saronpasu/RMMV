@@ -70,7 +70,7 @@
  *   Abort  Record: shift + T (on recording)
  *   Delete Record: shift + G
  *
- * == Play Record shift ==
+ * == Play Record control ==
  *   Start  Play Record: shift + V
  *   Pause  Play Record: shift + Q (on play record)
  *   Resume Play Record: shift + Q (on play record)
