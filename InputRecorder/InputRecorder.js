@@ -9,7 +9,7 @@
  *
  * @author saronpasu
  *
- * @version 0.0.1
+ * @version 0.0.2
  *
  * @param IR_HKey_StartRecord
  * @desc Start Record HotKey
@@ -111,7 +111,7 @@
  *
  * @author saronpasu
  *
- * @version 0.0.1
+ * @version 0.0.2
  *
  * @param IR_HKey_StartRecord
  * @desc 記録開始を制御するホットキーです。
@@ -1123,6 +1123,22 @@
                 });
             }
             eventSource.changedTouches = changedTouches;
+            var targetTouches = [];
+            for(i=0;i<event.targetTouches.length;i++) {
+                changedTouches.push({
+                    pageX: event.targetTouches[i].pageX,
+                    pageY: event.targetTouches[i].pageY
+                });
+            }
+            eventSource.targetTouches = targetTouches;
+            var touches = [];
+            for(i=0;i<event.touches.length;i++) {
+                changedTouches.push({
+                    pageX: event.touches[i].pageX,
+                    pageY: event.touches[i].pageY
+                });
+            }
+            eventSource.touches = touches;
 
             $input_record.addRecord({
                 label: 'TouchEvent tohchstart',
@@ -1151,6 +1167,22 @@
                 });
             }
             eventSource.changedTouches = changedTouches;
+            var targetTouches = [];
+            for(i=0;i<event.targetTouches.length;i++) {
+                changedTouches.push({
+                    pageX: event.targetTouches[i].pageX,
+                    pageY: event.targetTouches[i].pageY
+                });
+            }
+            eventSource.targetTouches = targetTouches;
+            var touches = [];
+            for(i=0;i<event.touches.length;i++) {
+                changedTouches.push({
+                    pageX: event.touches[i].pageX,
+                    pageY: event.touches[i].pageY
+                });
+            }
+            eventSource.touches = touches;
 
             $input_record.addRecord({
                 label: 'TouchEvent tohchmove',
@@ -1180,6 +1212,22 @@
                 });
             }
             eventSource.changedTouches = changedTouches;
+            var targetTouches = [];
+            for(i=0;i<event.targetTouches.length;i++) {
+                changedTouches.push({
+                    pageX: event.targetTouches[i].pageX,
+                    pageY: event.targetTouches[i].pageY
+                });
+            }
+            eventSource.targetTouches = targetTouches;
+            var touches = [];
+            for(i=0;i<event.touches.length;i++) {
+                changedTouches.push({
+                    pageX: event.touches[i].pageX,
+                    pageY: event.touches[i].pageY
+                });
+            }
+            eventSource.touches = touches;
 
             $input_record.addRecord({
                 label: 'TouchEvent tohchend',
@@ -1208,6 +1256,22 @@
                 });
             }
             eventSource.changedTouches = changedTouches;
+            var targetTouches = [];
+            for(i=0;i<event.targetTouches.length;i++) {
+                changedTouches.push({
+                    pageX: event.targetTouches[i].pageX,
+                    pageY: event.targetTouches[i].pageY
+                });
+            }
+            eventSource.targetTouches = targetTouches;
+            var touches = [];
+            for(i=0;i<event.touches.length;i++) {
+                changedTouches.push({
+                    pageX: event.touches[i].pageX,
+                    pageY: event.touches[i].pageY
+                });
+            }
+            eventSource.touches = touches;
 
             $input_record.addRecord({
                 label: 'TouchEvent tohchcancel',
