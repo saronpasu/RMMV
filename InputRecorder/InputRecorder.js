@@ -573,9 +573,9 @@
         } catch (e) {
         }
 
-        if (!InputRecorder.isRepeatPlayRecord() && (InputRecorder.isRecord() || InputRecorder.isPlayRecord())) {
+        if (!InputRecorder.isRepeatPlayRecord() && InputRecorder.isPlayRecord()) {
             return repeatControlTerms['repeat_on'];
-        } else if (InputRecorder.isRepeatPlayRecord() && (InputRecorder.isRecord() || InputRecorder.isPlayRecord())) {
+        } else if (InputRecorder.isRepeatPlayRecord() && InputRecorder.isPlayRecord()) {
             return repeatControlTerms['repeat_off'];
         } else {
             return false;
