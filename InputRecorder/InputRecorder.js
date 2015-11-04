@@ -9,7 +9,7 @@
  *
  * @author saronpasu
  *
- * @version 0.0.2
+ * @version 0.1.0
  *
  * @param IR_HKey_StartRecord
  * @desc Start Record HotKey
@@ -47,6 +47,10 @@
  * @desc Resume Play Record HotKey(on play record)
  * @default Q
  *
+ * @param IR_HKey_RpeatPlayControl
+ * @desc Abort Switch Repeat　ON/OFF Control HotKey(on play record)
+ * @default B
+ *
  * @param IR_HKey_AbortPlayRecord
  * @desc Abort Play Record HotKey(on play record)
  * @default T
@@ -74,6 +78,7 @@
  *   Start  Play Record: shift + V
  *   Pause  Play Record: shift + Q (on play record)
  *   Resume Play Record: shift + Q (on play record)
+ *   Switch Repeat Play: shift + B (on play record)
  *   Abort  Play Record: shift + T (on play record)
  *
  * == Other control ==
@@ -95,6 +100,7 @@
  *   Start  Play Record: touch 'Start Play Record'  button.
  *   Pause  Play Record: touch 'Pause'  button.
  *   Resume Play Record: touch 'Resume' button.
+ *   Switch Repeat Play: touch 'Repeat ON/OFF'  button.
  *   Abort  Play Record: touch 'Abort'  button.
  *
  *
@@ -111,7 +117,7 @@
  *
  * @author saronpasu
  *
- * @version 0.0.2
+ * @version 0.!.0
  *
  * @param IR_HKey_StartRecord
  * @desc 記録開始を制御するホットキーです。
@@ -149,6 +155,10 @@
  * @desc 記録の再生停止を再開するホットキーです。(記録の再生中のみ動作します)
  * @default Q
  *
+ * @param IR_HKey_RepeatPlayRecord
+ * @desc 記録のリピート再生のオン／オフ切り替えするホットキーです。(記録の再生中のみ動作します)
+ * @default B
+ *
  * @param IR_HKey_AbortPlayRecord
  * @desc 記録の再生中止を制御するホットキーです。(記録の再生中のみ動作します)
  * @default T
@@ -176,6 +186,7 @@
  *   記録再生を開始する: shift + V
  *   記録再生を停止する: shift + Q (再生中のみ有効)
  *   記録再生の停止を再開する: shift + Q (再生中のみ有効)
+ *   リピート再生のオン（オフ）: shift + B (再生中のみ有効)
  *   記録再生を中止する: shift + T (再生中のみ有効)
  *
  * == その他のコントール方法 ==
@@ -196,6 +207,7 @@
  *   記録再生を開始する: 「記録再生」ボタンをタッチして下さい。
  *   記録再生を停止する: 「一時停止」ボタンをタッチして下さい。
  *   記録再生の停止を再開する: ［再開」ボタンをタッチして下さい。
+ *   リピート再生のオン（オフ）: 「リピートオン（オフ）」ボタンをタッチして下さい。
  *   記録再生を中止する: 「再生終了」ボタンをタッチして下さい。
  *
  *
@@ -219,6 +231,7 @@
     var IR_HKey_StartPlayRecord = String(parameters['IR HKey Start Play Record'] || 'V');
     var IR_HKey_PausePlayRecord = String(parameters['IR HKey Pause Play Record'] || 'Q');
     var IR_HKey_ResumePlayRecord = String(parameters['IR HKey Resume Play Record'] || 'Q');
+    var IR_HKey_RepeatPlayRecord = String(parameters['IR HKey Repeat Play Record'] || 'B');
     var IR_HKey_AbortPlayRecord = String(parameters['IR HKey Abort Play Record'] || 'T');
 
     var IR_HKey_SwitchVisibleControl = String(parameters['IR HKey Switch Visible Control'] || 'R');
@@ -288,6 +301,18 @@
             var virtualEvent = VirtualEvent.createEvent(currentRecord.event);
             // console.log('VirtualEvent execute');
             document.dispatchEvent(virtualEvent);
+        } else if (InputRecorder.isRepeatPlayRecord()) {
+            console.log(' === InputRecorder Repeat Play Record === ');
+            $multi_timer = new Multi_Timer();
+            $input_record = new InputRecord();
+            $input_record.load();
+            if ($input_record._record.length === 0) {
+                console.log(' non record. ');
+                console.log(' === InputRecorder Abort Play Record === ');
+                return false;
+            }
+            $multi_timer.start($input_record.nextQueue());
+            this._onPlayRecord = true;
         } else {
             console.log(' === InputRecorder End Play Record === ');
             InputRecorder._onPlayRecord = false;
@@ -354,6 +379,7 @@
          this._onPauseRecord = false;
          this._onPlay = false;
          this._onPausePlay = false;
+         this._onRepeatPlay = false;
          this.F = true;
          this._tempRecord = new InputRecord();
     };
@@ -374,6 +400,10 @@
         return this._onPausePlayRecord;
     };
 
+    InputRecorder.isRepeatPlayRecord = function() {
+        return this._onRepeatPlayRecord;
+    };
+
     InputRecorder.isControlVisible = function() {
         return this._controlVisible;
     };
@@ -382,6 +412,7 @@
         var statusTerms_en = {
             recording: 'Recording',
             pause_record: 'Pause Record',
+            repeat: 'Repeat ',
             play_record: 'Play Record',
             pause_play_record: 'Pause Play Record',
             standby: 'Standby'
@@ -389,6 +420,7 @@
         var statusTerms_ja = {
             recording: '記録中',
             pause_record: '記録中/一時停止',
+            repeat: 'リピート',
             play_record: '再生中',
             pause_play_record: '再生中/一時停止',
             standby: 'スタンバイ'
@@ -406,9 +438,17 @@
         } else if (InputRecorder.isRecord() && InputRecorder.isPauseRecord() && !InputRecorder.isPlayRecord()) {
             return statusTerms['pause_record'];
         } else if (InputRecorder.isPlayRecord() && !InputRecorder.isPausePlayRecord() && !InputRecorder.isRecord()) {
-            return statusTerms['play_record'];
+            if (InputRecorder.isRepeatPlayRecord()) {
+                return statusTerms['repeat'] + statusTerms['play_record'];
+            } else {
+                return statusTerms['play_record'];
+            }
         } else if (InputRecorder.isPlayRecord() && InputRecorder.isPausePlayRecord() && !InputRecorder.isRecord()) {
-            return statusTerms['pause_play_record'];
+            if (InputRecorder.isRepeatPlayRecord()) {
+                return statusTerms['repeat'] + statusTerms['pause_play_record'];
+            } else {
+                return statusTerms['pause_play_record'];
+            }
         } else {
             return statusTerms['standby'];
         };
@@ -511,6 +551,32 @@
 
         if (InputRecorder.isRecord() || InputRecorder.isPlayRecord()) {
             return abortControlTerms['abort'];
+        } else {
+            return false;
+        }
+    };
+
+    InputRecorder.repeatControlText = function() {
+        var repeatControlTerms_en = {
+            repeat_on: 'Repeat ON',
+            repeat_off: 'Repeat OFF'
+        };
+        var repeatControlTerms_ja = {
+            repeat_on: 'リピートオン',
+            repeat_off: 'リピートオフ'
+        };
+        var repeatControlTerms = repeatControlTerms_en;
+        try {
+            if ($gameSystem.isJapanese()) {
+                repeatControlTerms = repeatControlTerms_ja;
+            }
+        } catch (e) {
+        }
+
+        if (!InputRecorder.isRepeatPlayRecord() && (InputRecorder.isRecord() || InputRecorder.isPlayRecord())) {
+            return repeatControlTerms['repeat_on'];
+        } else if (InputRecorder.isRepeatPlayRecord() && (InputRecorder.isRecord() || InputRecorder.isPlayRecord())) {
+            return repeatControlTerms['repeat_off'];
         } else {
             return false;
         }
@@ -641,6 +707,7 @@
             }
             $multi_timer.start($input_record.nextQueue());
             this._onPlayRecord = true;
+            this._onRepeatPlayRecord = false;
         }
     };
 
@@ -671,6 +738,16 @@
         }
     };
 
+    InputRecorder.switchRepeatPlayRecord = function() {
+        console.log('in Repeat Play Record');
+        if (!InputRecorder.isPlayRecord() || InputRecorder.isRecord()) {
+            return false;
+        } else if (InputRecorder.isPlayRecord() && !InputRecorder.isRecord()) {
+            console.log(' === InputRecorder Switch Repeat Play Record === ');
+            this._onRepeatPlayRecord = !this._onRepeatPlayRecord;
+        }
+    };
+
     InputRecorder.abortPlayRecord = function() {
         console.log('in Abort Play Record');
         if (!InputRecorder.isPlayRecord() || InputRecorder.isRecord()) {
@@ -681,6 +758,7 @@
             $input_record = new InputRecord();
             this._onPlayRecord = false;
             this._onPausePlayRecord = false;
+            this._onRepeatPlayRecord = false;
         }
     };
 
@@ -752,6 +830,7 @@
              IR_HKey_StartPlayRecord,
              IR_HKey_PausePlayRecord,
              IR_HKey_ResumePlayRecord,
+             IR_HKey_RepeatPlayRecord,
              IR_HKey_AbortPlayRecord,
 
              IR_HKey_SwitchVisibleControl
@@ -833,6 +912,12 @@
             InputRecorder.keyMapper[IR_HKey_ResumePlayRecord].toString() + ' ] '
         );
         console.log(
+            'IR HotKey Repeat Play Record: Key[ ' + 
+            IR_HKey_RepeatPlayRecord + ' ] ' +
+            'KeyCode [ ' +
+            InputRecorder.keyMapper[IR_HKey_RepeatPlayRecord].toString() + ' ] '
+        );
+        console.log(
             'IR HotKey Abort Play Record: Key[ ' + 
             IR_HKey_AbortPlayRecord + ' ] ' +
             'KeyCode [ ' +
@@ -865,6 +950,7 @@
         setKey(InputRecorder.keyMapper[IR_HKey_StartPlayRecord], function() {InputRecorder.startPlayRecord()});
         setKey(InputRecorder.keyMapper[IR_HKey_ResumePlayRecord], function() {InputRecorder.resumePlayRecord()});
         setKey(InputRecorder.keyMapper[IR_HKey_PausePlayRecord], function() {InputRecorder.pausePlayRecord()});
+        setKey(InputRecorder.keyMapper[IR_HKey_RepeatPlayRecord], function() {InputRecorder.switchRepeatPlayRecord()});
         setKey(InputRecorder.keyMapper[IR_HKey_AbortPlayRecord], function() {InputRecorder.abortPlayRecord()});
 
         setKey(InputRecorder.keyMapper[IR_HKey_SwitchVisibleControl], function() {InputRecorder.switchVisibleControl()});
@@ -1381,7 +1467,7 @@
     };
 
     Sprite_InputRecorderStatus.prototype.createBitmap = function() {
-        this.bitmap = new Bitmap(150, 32);
+        this.bitmap = new Bitmap(420, 32);
         this.bitmap.fontSize = 24;
     };
 
@@ -1677,6 +1763,67 @@
         }
     };
 
+    var Sprite_InputRecorderRepeatControlButton = function() {
+        this.initialize.apply(this, arguments);
+    };
+
+    Sprite_InputRecorderRepeatControlButton.prototype = Object.create(Sprite_Button.prototype);
+    Sprite_InputRecorderRepeatControlButton.prototype.constructor = Sprite_InputRecorderRepeatControlButton;
+
+    Sprite_InputRecorderRepeatControlButton.prototype.initialize = function() {
+        Sprite_Button.prototype.initialize.call(this);
+        this.createBitmap();
+        this.update();
+    };
+
+    Sprite_InputRecorderRepeatControlButton.prototype.createBitmap = function() {
+        this.bitmap = new Bitmap(150, 32);
+        this.bitmap.fontSize = 24;
+    };
+
+    Sprite_InputRecorderRepeatControlButton.prototype.update = function() {
+        Sprite.prototype.update.call(this);
+        this.updateBitmap();
+        this.updatePosition();
+        this.updateVisibility();
+    };
+
+    Sprite_InputRecorderRepeatControlButton.prototype.updateBitmap = function() {
+        this.redraw();
+    };
+
+    Sprite_InputRecorderRepeatControlButton.prototype.redraw = function() {
+        var repeatControlText = this.repeatControlText();
+        var width = this.bitmap.width;
+        var height = this.bitmap.height;
+        this.bitmap.clear();
+        this.bitmap.drawText(repeatControlText, 0, 0, width, height, 'right');
+
+        if (this.isActive() && TouchInput.isTriggered() && this.isButtonTouched()) {
+
+            if (InputRecorder.isPlayRecord()) {
+                InputRecorder.switchRepeatPlayRecord();
+            }
+
+        }
+    };
+
+    Sprite_InputRecorderRepeatControlButton.prototype.repeatControlText = function() {
+        return InputRecorder.repeatControlText();
+    };
+
+    Sprite_InputRecorderRepeatControlButton.prototype.updatePosition = function() {
+        this.x = Graphics.width - this.bitmap.width;
+        this.y = 192;
+    };
+
+    Sprite_InputRecorderRepeatControlButton.prototype.updateVisibility = function() {
+        if (InputRecorder.isControlVisible() && !!this.repeatControlText()) {
+            this.visible = true;
+        } else {
+            this.visible = false;
+        }
+    };
 
     var Sprite_InputRecorderDeleteRecordControlButton = function() {
         this.initialize.apply(this, arguments);
@@ -1765,6 +1912,11 @@
         this.addChild(this._inputRecorderSpritePauseControlButton);
     };
 
+    Spriteset_Base.prototype.createInputRecorderRepeatControlButton = function() {
+        this._inputRecorderSpriteRepeatControlButton = new Sprite_InputRecorderRepeatControlButton();
+        this.addChild(this._inputRecorderSpriteRepeatControlButton);
+    };
+
     Spriteset_Base.prototype.createInputRecorderAbortControlButton = function() {
         this._inputRecorderSpriteAbortControlButton = new Sprite_InputRecorderAbortControlButton();
         this.addChild(this._inputRecorderSpriteAbortControlButton);
@@ -1785,6 +1937,7 @@
         this.createInputRecorderPlayRecordControlButton();
         this.createInputRecorderPauseControlButton();
         this.createInputRecorderAbortControlButton();
+        this.createInputRecorderRepeatControlButton();
         this.createInputRecorderDeleteRecordControlButton();
     };
 
