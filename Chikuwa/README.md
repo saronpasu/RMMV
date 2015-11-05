@@ -33,11 +33,11 @@
 ---
 動作確認
 
-1) まず js/plugins フォルダへ HelloWorld.js を入れます。
+1) まず js/plugins フォルダへ Chikuwa.js を入れます。
 
 2) エディタのプラグインマネージャーを開きます。
 
-3) プラグインマネージャーで HelloWorld を登録します。
+3) プラグインマネージャーで Chikuwa を登録します。
 
 ![プラグインマネージャーの操作画面](/Chikuwa/img/plugin_manager.png)
 
