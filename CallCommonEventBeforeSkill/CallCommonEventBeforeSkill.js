@@ -7,7 +7,7 @@
  * order "call common event before use skill".
  * @author saronpasu
  *
- * @version 0.0.1
+ * @version 0.0.2
  *
  * @help
  * Usage:
@@ -50,7 +50,7 @@
                 interpreter.setup(event.list, 1);
                 interpreter.update();
             }
-        catch (e) {
+        } catch (e) {
                 console.log(e);
             }
     };
