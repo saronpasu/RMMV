@@ -6,7 +6,7 @@
  * @plugindesc variable store chikuwa
  * @author saronpasu
  *
- * @version 0.0.1
+ * @version 0.0.2
  *
  * @param FileName
  * @desc Save FileName
@@ -50,7 +50,7 @@
 
     var parameters = PluginManager.parameters('Chikuwa');
     var FileName = String(parameters['FileName'] || 'chikuwa');
-    var WebStrageKey = String(parameters['WebStrageKey'] || 'Chikuwa');
+    var WebStorageKey = String(parameters['WebStrageKey'] || 'Chikuwa');
 
     var _Game_Interpreter_pluginCommand =
             Game_Interpreter.prototype.pluginCommand;
