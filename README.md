@@ -33,5 +33,10 @@ RPGMakerMV(RPGツクールMV)のプラグイン置き場（仮）です。
 - [InputRecorder.js](/InputRecorder/)
    - 「キー入力とかマウス入力とかを記録、再生する機能を追加する」プラグイン。いわゆるキーマクロ。
 
+## Author
+saronpasu
+
+- Twitter: https://twitter.com/saronpasu
+
 ## License
 MIT ライセンス です。

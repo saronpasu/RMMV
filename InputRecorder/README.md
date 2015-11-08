@@ -91,6 +91,7 @@ javascript には不慣れなのでコードが汚いしエレガントじゃな
 - rpg_scenes.js
 - rpg_sprites.js
 
+## History
 version 0.0.1
 - とりあえず動くようにしたよ！
 
@@ -100,6 +101,11 @@ version 0.0.2
 
 version 0.1.0
 - リピート再生機能を追加したよ！
+
+## Author
+saronpasu
+
+- Twitter: https://twitter.com/saronpasu
 
 ## License
 MIT ライセンス です。

@@ -8,8 +8,14 @@ Android端末のバッテリー情報を取得するプラグインです。
 
 詳しい処理は Battery.js を見て下さい。
 
+## History
 version 0.0.1
 - 端末上（アプリ）とブラウザ経由で、とりあえず動くようにしたよ！
+
+## Author
+saronpasu
+
+- Twitter: https://twitter.com/saronpasu
 
 ## License
 MIT ライセンス です。

@@ -12,6 +12,7 @@
 - rpg_manager.js Config_Manager
 - rpg_window.js Window_Option
 
+## History
 version 0.0.1
 - とりあえず動くようにした。
 - 用語（Term）のメッセージ周りは未訳です。
@@ -25,6 +26,11 @@ version 0.0.3
 
 version 0.0.4
 - オプション設定が正しく読み込まれない不具合を修正。
+
+## Author
+saronpasu
+
+- Twitter: https://twitter.com/saronpasu
 
 ## License
 MIT ライセンス です。

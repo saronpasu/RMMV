@@ -10,11 +10,17 @@
 - rpg_objects.js
 - rpg_scenes.js
 
+## History
 version 0.0.1
 - とりあえず動くようにしたよ！
 
 version 0.0.2
 - まともに動作しなかった不具合を修正
+
+## Author
+saronpasu
+
+- Twitter: https://twitter.com/saronpasu
 
 ## License
 MIT ライセンス です。

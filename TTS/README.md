@@ -30,6 +30,7 @@ $dataSystem.locale が 「ja_JP」の場合は自動的に日本語読み上げ�
 以下のネイティブプラグインを一部、オーバーライドしています。
 - rpg_windows.js Window_Base
 
+## History
 version 0.0.1
 - とりあえず動くようにしたよ！
 
@@ -37,6 +38,11 @@ version 0.0.2
 - 読み上げの停止と割り込みについて処理を追加。
 - 読み上げの完了を待機する処理については実装方法を検討中。
 - いろいろありがとう！ @tkoolmv さん
+
+## Author
+saronpasu
+
+- Twitter: https://twitter.com/saronpasu
 
 ## License
 MIT ライセンス です。

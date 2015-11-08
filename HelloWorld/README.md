@@ -54,9 +54,14 @@
 
 それでは、楽しいツクールライフを！！
 
-
+## History
 version 0.0.1
 - とりあえず動くようにしたよ！
+
+## Author
+saronpasu
+
+- Twitter: https://twitter.com/saronpasu
 
 ## License
 MIT ライセンス です。
