@@ -51,7 +51,7 @@
 - 「Plugin Command: Chikuwa 1 > 1」 （ちくわ変数０００１を変数０００１に代入）
 - 「Text: 変数１は\\V[1]です。」 （変数０００１の内容が５になっていることを確認）
 
-![イベント内容](/Chikuwa/img/event.png)
+![イベント内容](/Chikuwa/img/event_1.png)
 
 6) テストプレイでイベントを実行し、動作確認をしてみて下さい。
 
@@ -63,16 +63,51 @@
 
 ちくわ変数がセーブデータを横断して引き継がれているかどうか確認して下さい。
 
+---
+New!! ちくわ上級編（ベータ）
+
+新機能「スクリプトで変数取得」の使い方説明です。
+
+1) 次のようなイベント内容でイベントを作成します。
+
+- 「Text: ちくわはおいしい？」
+- 「Plugin Command: Chikuwa 1 = 1」 （ちくわ変数０００１に１を代入）
+- 「Plugin Command: Chikuwa 2 = 2」 （ちくわ変数０００２に２を代入）
+- 「If: Script: $gameVariables.chikuwa(1) < $gameVariables.chikuwa(2);」 （If ちくわ変数０００１がちくわ変数０００２より小さい）
+   - 「Comment: ＊こっちに分岐すれば正解＊」
+   - 「Text: ちくわおいしい！」
+- 「Else:」
+   - 「Comment: ＊こっちに分岐すれば不正解＊」
+   - 「Text: ちくわおいしくない！」
+- 「End:」
+
+![イベント内容](/Chikuwa/img/event_2.png)
+
+2) どうでしょうか。ちゃんと分岐しましたか？
 
 
 それでは、楽しいツクールライフを！！
 
+---
+- Special Thanks:
+   - >>202
+   - Badhabits
 
+## History
 version 0.0.1
 - とりあえず動くようにしたよ！
 
 version 0.0.2
 - ブラウザ版で動かない不具合を修正
+
+version 0.1.0
+- スクリプト実行に対応。
+- ちくわ変数の削除を追加。
+
+## Author
+saronpasu
+
+- Twitter: https://twitter.com/saronpasu
 
 ## License
 MIT ライセンス です。

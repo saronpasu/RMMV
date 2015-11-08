@@ -6,7 +6,7 @@
  * @plugindesc variable store chikuwa
  * @author saronpasu
  *
- * @version 0.0.2
+ * @version 0.1.0
  *
  * @param FileName
  * @desc Save FileName
@@ -21,6 +21,12 @@
  * "Chikuwa 1 + 6" then chikuwa variables[1] increment 6.
  * "Chikuwa 1 > 2" then chikuwa variables[1] set $gameVariables[2]
  * "Chikuwa 1 < 2" then $gameVariables[2] set chikuwa variables[1]
+ * "Chikuwa 1 delete" then delete chikuwa variables[1]
+ * "Chikuwa all delete" then delete all chikuwa variables
+ *
+ * Advanced Usage(Beta)
+ * script "$gameVariables.chikuwa(1);" return Chikuwa variables[1].
+ * [readonly]
  *
  */
 
@@ -43,6 +49,12 @@
  * ちくわ変数とゲーム変数の操作は次の通りです。
  * プラグインコマンド「Chikuwa 1 > 2」で、ちくわ変数「１」番の値をゲーム変数「２」に取り出せます。
  * プラグインコマンド「Chikuwa 1 < 2」で、ゲーム変数「２」番の値をちくわ変数「１」に代入できます。
+ * プラグインコマンド「Chikuwa 1 delete」で、ちくわ変数「１」を削除します。
+ * プラグインコマンド「Chikuwa all delete」で、ちくわ変数をすべて削除します。
+ *
+ * ちくわ上級編(ベータ)
+ * スクリプトで「$gameVariables.chikuwa(1);」と実行すると、ちくわ変数「１」が返ります。
+ * [読み込み専用]
  *
  */
 
@@ -54,7 +66,12 @@
  *
  */
 
+var Imported = Imported || {};
+Imported.Chikuwa = {};
+
 (function() {
+
+    'use strict';
 
     var parameters = PluginManager.parameters('Chikuwa');
     var FileName = String(parameters['FileName'] || 'chikuwa');
@@ -82,6 +99,15 @@
                 case '<':
                     chikuwa.set(args[0], $gameVariables.value(args[2]));
                     break;
+                case 'delete':
+                    console.log(args);
+                    if (/^[0-1]+$/.test(args[0])) {
+                        console.log(args[0]);
+                        chikuwa.set(args[0], 0);
+                    } else if (args[0] === 'all') {
+                        chikuwa.delete();
+                    }
+                    break;
             }
         }
     };
@@ -98,6 +124,14 @@
         this._variables = this.load();
     };
 
+    Chikuwa.prototype.isValidId = function(id) {
+        return /^[0-9]+$/.test(id);
+    };
+
+    Chikuwa.prototype.isValidValue = function(value) {
+        return value >= 0;
+    };
+
     Chikuwa.prototype.increment = function(id, param) {
         var value = this.get(id);
         value += param;
@@ -111,6 +145,11 @@
     };
 
     Chikuwa.prototype.set = function(id, param) {
+        if ((!this.isValidId(id) || !this.isValidValue(param))) {
+            console.error('invalid id or value');
+            return false;
+        }
+
         this.applyData();
         this._variables[id] = param;
         var json = JSON.stringify(this.makeData());
@@ -118,6 +157,11 @@
     };
 
     Chikuwa.prototype.get = function(id) {
+        if (!this.isValidId(id)) {
+            console.error('invalid id');
+            return 0;
+        }
+
         this.applyData();
         var value = this._variables[id];
         if (typeof value === 'undefined') {
@@ -199,6 +243,19 @@
 
     Chikuwa.prototype.webStorageKey = function() {
          return WebStrageKey;
+    };
+
+
+    var Game_Variables_initialize = Game_Variables.prototype.initialize;
+    Game_Variables.prototype.initialize = function() {
+        Game_Variables_initialize.call(this);
+
+        var chikuwa = new Chikuwa();
+        this._chikuwa = chikuwa;
+    };
+
+    Game_Variables.prototype.chikuwa = function(id) {
+        return this._chikuwa.get(id);
     };
 
 })();
