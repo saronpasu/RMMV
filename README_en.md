@@ -33,4 +33,5 @@ not categorized.
 - [InputRecorder.js](/InputRecorder/)
    - Recording User's keybord, mouse, and other input. and automatic game play from record.
 
-
+## License
+MIT
