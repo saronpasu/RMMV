@@ -73,7 +73,7 @@ New!! ちくわ上級編（ベータ）
 - 「Text: ちくわはおいしい？」
 - 「Plugin Command: Chikuwa 1 = 1」 （ちくわ変数０００１に１を代入）
 - 「Plugin Command: Chikuwa 2 = 2」 （ちくわ変数０００２に２を代入）
-- 「If: Script: $gameVariables.chikuwa(1) < $gameVariables.chikuwa(2);」 （If ちくわ変数０００１がちくわ変数０００２より小さい）
+- 「If: Script: $gameVariables.chikuwa(1) < $gameVariables.chikuwa(2);」 （ちくわ変数を比較して分岐）
    - 「Comment: ＊こっちに分岐すれば正解＊」
    - 「Text: ちくわおいしい！」
 - 「Else:」
