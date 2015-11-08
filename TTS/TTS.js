@@ -71,6 +71,14 @@
  *
  */
 
+/*
+ * Copyright (c) 2015 saronpasu
+ *
+ * This software is released under the MIT License.
+ * http://opensource.org/licenses/mit-license.php
+ *
+ */
+
 (function() {
 
     speechSynthesis.getVoices(); // 1st call return [] on chrome.

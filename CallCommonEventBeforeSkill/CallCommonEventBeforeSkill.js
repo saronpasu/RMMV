@@ -31,6 +31,14 @@
  *
  */
 
+/*
+ * Copyright (c) 2015 saronpasu
+ *
+ * This software is released under the MIT License.
+ * http://opensource.org/licenses/mit-license.php
+ *
+ */
+
 (function() {
 
     var parameters = PluginManager.parameters('CallCommonEventBeforeSkill');

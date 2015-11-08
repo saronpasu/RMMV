@@ -74,3 +74,6 @@ version 0.0.1
 version 0.0.2
 - ブラウザ版で動かない不具合を修正
 
+## License
+MIT ライセンス です。
+

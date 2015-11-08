@@ -16,3 +16,5 @@ version 0.0.1
 version 0.0.2
 - まともに動作しなかった不具合を修正
 
+## License
+MIT ライセンス です。
