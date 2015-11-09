@@ -6,7 +6,7 @@
 
 詳しい処理は CallCommonEventBeforeSkill.js を見て下さい。
 
-以下のネイティブプラグインを一部、オーバーライドしています。
+以下のネイティブプラグインを一部、エイリアスしています。
 - rpg_objects.js
 - rpg_scenes.js
 
