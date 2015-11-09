@@ -17,6 +17,9 @@ version 0.0.1
 version 0.0.2
 - まともに動作しなかった不具合を修正
 
+version 0.1.0
+- コモンイベントが正しく実行されなかった不具合を修正
+
 ## Author
 saronpasu
 

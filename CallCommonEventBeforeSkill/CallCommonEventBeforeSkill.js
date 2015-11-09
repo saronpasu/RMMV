@@ -7,7 +7,7 @@
  * order "call common event before use skill".
  * @author saronpasu
  *
- * @version 0.0.2
+ * @version 0.1.0
  *
  * @help
  * Usage:
@@ -21,7 +21,7 @@
  * オーダー内容は「スキル使用前にコモンイベント」です。
  * @author saronpasu
  *
- * @version 0.0.1
+ * @version 0.1.0
  *
  * @help
  * 使い方:
@@ -31,45 +31,28 @@
  *
  */
 
-/*
- * Copyright (c) 2015 saronpasu
- *
- * This software is released under the MIT License.
- * http://opensource.org/licenses/mit-license.php
- *
- */
+var Imported = Imported || {};
+Imported.CallCommonEventBeforeSkill = {};
 
 (function() {
 
-    var parameters = PluginManager.parameters('CallCommonEventBeforeSkill');
+    'use strict';
 
-//-----------------------------------------------------------------------------
-// CallCommonEvent
-//
-// call common event.
+    var parameters = PluginManager.parameters('CallCommonEventBeforeSkill');
 
     var CallCommonEvent = function(source) {
         try {
             var pattern = new RegExp('CommonEvent:(\\d+)', 'g');
             var targetId = new Number(pattern.exec(source)[1]);
             if (targetId != NaN) {
-                var event = $dataCommonEvents[targetId];
-                var interpreter = new Game_Interpreter();
-                interpreter.setup(event.list, 1);
-                interpreter.update();
+                $gameTemp.reserveCommonEvent(targetId);
             }
         } catch (e) {
                 console.log(e);
             }
     };
 
-//-----------------------------------------------------------------------------
-// BeforeSkillUse
-//
-// before skill use.
-
     var BeforeSkillUse = function(item) {
-        console.log(item);
         try {
             var source = item.meta.before;
             CallCommonEvent(source);
@@ -79,43 +62,23 @@
         }
     };
 
-//-----------------------------------------------------------------------------
-// Game_Battler
-//
-// OverRide from rpg_objects.js Game_Battler class.
-
+    var Game_Battler_performActionStart = Game_Battler.prototype.performActionStart;
     Game_Battler.prototype.performActionStart = function(action) {
 
-        /* --- custom code --- */
-        console.log('before Game_Battler.prototype.performActionStart');
-        /* --- custom code --- */
-
-        /* --- original code --- */
         if(action.isSkill() && !action.isAttack() && !action.isGuard()) {
             BeforeSkillUse(action.item());
         }
         if (!action.isGuard()) {
-            this.setActionState('acting');
+            Game_Battler_performActionStart.call(this, action);
         }
-        /* --- original code --- */
     };
 
-//-----------------------------------------------------------------------------
-// Scene_Skill
-//
-// OverRide from rpg_scenes.js Scene_Skill class.
-
+    var Scene_Skill_useItem = Scene_Skill.prototype.useItem;
     Scene_Skill.prototype.useItem = function() {
 
-        /* --- custom code --- */
         BeforeSkillUse(this.item());
-        /* --- custom code --- */
 
-        /* --- original code --- */
-        Scene_ItemBase.prototype.useItem.call(this);
-        this._statusWindow.refresh();
-        this._itemWindow.refresh();
-        /* --- original code --- */
+        Scene_Skill_useItem.call(this);
     };
 
 
