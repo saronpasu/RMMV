@@ -45,14 +45,7 @@ Imported.CallCommonEventBeforeSkill = {};
         var targetId = new Number(pattern.exec(source)[1]);
         if (targetId != NaN) {
             $gameTemp.reserveCommonEvent(targetId);
-            console.log('-----------');
-            if ($gameParty.inBattle()) {
-                console.log('===========');
-                // BattleManager._action = temp.dummyAct;
-                // $gameTroop.setupBattleEvent();
-                // console.log($gameTroop.isEventRunning());
-                // BattleManager.updateEventMain();
-            } else {
+            if (!$gameParty.inBattle()) {
                 SceneManager.update();
             }
         }
@@ -100,7 +93,6 @@ Imported.CallCommonEventBeforeSkill = {};
         if(action && action.isSkill() && !action.isAttack() && !action.isGuard()) {
             this._actions.unshift(action);
             flags[1] = true;
-            temp = {};
             var dummyAction = new Game_Action(this, true);
             $dataSkills.push(dummySkill);
             dummyAction.setSkill($dataSkills.length-1);
