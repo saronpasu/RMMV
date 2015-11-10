@@ -7,7 +7,7 @@
  * order "call common event before use skill".
  * @author saronpasu
  *
- * @version 0.1.4
+ * @version 0.1.5
  *
  * @help
  * Usage:
@@ -21,7 +21,7 @@
  * オーダー内容は「スキル使用前にコモンイベント」です。
  * @author saronpasu
  *
- * @version 0.1.4
+ * @version 0.1.5
  *
  * @help
  * 使い方:
@@ -40,6 +40,17 @@ Imported.CallCommonEventBeforeSkill = {};
 
     var parameters = PluginManager.parameters('CallCommonEventBeforeSkill');
 
+    var IsCallCommonEvent = function(item) {
+        try {
+           var source = item.meta.before;
+        }
+        catch(e) {
+           return false;
+        }
+        var pattern = new RegExp('CommonEvent:(\\d+)', 'g');
+        return pattern.test(source);
+    };
+
     var CallCommonEvent = function(source) {
         var pattern = new RegExp('CommonEvent:(\\d+)', 'g');
         var targetId = new Number(pattern.exec(source)[1]);
@@ -57,7 +68,6 @@ Imported.CallCommonEventBeforeSkill = {};
             CallCommonEvent(source);
         }
         catch (e) {
-            console.log(e);
         }
     };
 
@@ -85,7 +95,6 @@ Imported.CallCommonEventBeforeSkill = {};
 
     var Game_Battler_onAllActionsEnd = Game_Battler.prototype.onAllActionsEnd;
     Game_Battler.prototype.onAllActionsEnd = function() {
-        console.log('called');
         flags = [false, false];
 
         Game_Battler_onAllActionsEnd.call(this);
@@ -93,13 +102,15 @@ Imported.CallCommonEventBeforeSkill = {};
 
     var Game_Battler_currentAction = Game_Battler.prototype.currentAction;
     Game_Battler.prototype.currentAction = function() {
-        console.log(flags);
 
         if(flags[0]) {
             return Game_Battler_currentAction.call(this);
         }
         var action = this._actions[0];
         if(action && action.isSkill() && !action.isAttack() && !action.isGuard()) {
+           if(!IsCallCommonEvent(action.item())) {
+                return Game_Battler_currentAction.call(this);
+            }
             this._actions.unshift(action);
             flags[1] = true;
             var dummyAction = new Game_Action(this, true);
