@@ -3,11 +3,11 @@
 //=============================================================================
 
 /*:
- * @plugindesc custom made plugin. for baronsengir:twitter
+ * @plugindesc custom made plugin.
  * order "call common event before use skill".
  * @author saronpasu
  *
- * @version 0.1.0
+ * @version 0.1.2
  *
  * @help
  * Usage:
@@ -17,11 +17,11 @@
  */
 
 /*:ja
- * @plugindesc オーダーメイドのプラグインです。 男爵さん専用。
+ * @plugindesc オーダーメイドのプラグインです。
  * オーダー内容は「スキル使用前にコモンイベント」です。
  * @author saronpasu
  *
- * @version 0.1.0
+ * @version 0.1.2
  *
  * @help
  * 使い方:
@@ -41,15 +41,21 @@ Imported.CallCommonEventBeforeSkill = {};
     var parameters = PluginManager.parameters('CallCommonEventBeforeSkill');
 
     var CallCommonEvent = function(source) {
-        try {
-            var pattern = new RegExp('CommonEvent:(\\d+)', 'g');
-            var targetId = new Number(pattern.exec(source)[1]);
-            if (targetId != NaN) {
-                $gameTemp.reserveCommonEvent(targetId);
+        var pattern = new RegExp('CommonEvent:(\\d+)', 'g');
+        var targetId = new Number(pattern.exec(source)[1]);
+        if (targetId != NaN) {
+            $gameTemp.reserveCommonEvent(targetId);
+            console.log('-----------');
+            if ($gameParty.inBattle()) {
+                console.log('===========');
+                // BattleManager._action = temp.dummyAct;
+                // $gameTroop.setupBattleEvent();
+                // console.log($gameTroop.isEventRunning());
+                // BattleManager.updateEventMain();
+            } else {
+                SceneManager.update();
             }
-        } catch (e) {
-                console.log(e);
-            }
+        }
     };
 
     var BeforeSkillUse = function(item) {
@@ -62,15 +68,48 @@ Imported.CallCommonEventBeforeSkill = {};
         }
     };
 
-    var Game_Battler_performActionStart = Game_Battler.prototype.performActionStart;
-    Game_Battler.prototype.performActionStart = function(action) {
+    var dummySkill = {
+        animationId: 0,
+        hitType: 0,
+        mpCost: 0,
+        tpCost: 0,
+        tpGain: 0,
+        iconIndex: 0,
+        scope: 0,
+        successRate: 100,
+        speed: 0,
+        requireWtypeId1: 0,
+        requireWytpeId2: 0,
+        reqpeats: 1,
+        occasion: 0,
+        message1: '',
+        message2: '',
+        damage: { type: 0 },
+        effects: []
+    };
 
-        if(action.isSkill() && !action.isAttack() && !action.isGuard()) {
+    var flags = [false, false];
+
+    var Game_Battler_currentAction = Game_Battler.prototype.currentAction;
+    Game_Battler.prototype.currentAction = function() {
+        
+        if(flags[0]) {
+            return Game_Battler_currentAction.call(this);
+        }
+        var action = this._actions[0];
+        if(action && action.isSkill() && !action.isAttack() && !action.isGuard()) {
+            this._actions.unshift(action);
+            flags[1] = true;
+            temp = {};
+            var dummyAction = new Game_Action(this, true);
+            $dataSkills.push(dummySkill);
+            dummyAction.setSkill($dataSkills.length-1);
+            dummyAction._item._itemId = $dataSkills.length-1;
             BeforeSkillUse(action.item());
+            return dummyAction;
         }
-        if (!action.isGuard()) {
-            Game_Battler_performActionStart.call(this, action);
-        }
+
+        return Game_Battler_currentAction.call(this);
     };
 
     var Scene_Skill_useItem = Scene_Skill.prototype.useItem;
@@ -81,6 +120,18 @@ Imported.CallCommonEventBeforeSkill = {};
         Scene_Skill_useItem.call(this);
     };
 
+    var Game_Interpreter_terminate = Game_Interpreter.prototype.terminate;
+    Game_Interpreter.prototype.terminate = function() {
+        if (flags[1]) {
+            $dataSkills.pop();
+            BattleManager._subject._actions.shift();
+            
+            flags[1] = false;
+            flags[0] = !flags[0];
+        }
+
+        Game_Interpreter_terminate.call(this);
+    };
 
 })();
 
