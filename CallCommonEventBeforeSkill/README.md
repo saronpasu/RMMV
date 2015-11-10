@@ -32,6 +32,7 @@ version 0.1.4
 saronpasu
 
 ## Specian Thanks
+- 男爵 さん
 - けい＠ABOW さん
 
 - Twitter: https://twitter.com/saronpasu
