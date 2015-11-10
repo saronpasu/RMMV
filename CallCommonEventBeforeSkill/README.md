@@ -10,6 +10,7 @@
 以下のネイティブプラグインを一部、エイリアスしています。
 - rpg_objects.js
 - rpg_scenes.js
+- rpg_manager.js
 
 ## History
 version 0.0.1
@@ -24,8 +25,14 @@ version 0.1.0
 version 0.1.2
 - スキル前にコモンイベントを呼べていなかった不具合を修正
 
+version 0.1.4
+- 最初の一回しか動作しなかった不具合を修正　けい＠ABOW さんありがとう！！
+
 ## Author
 saronpasu
+
+## Specian Thanks
+- けい＠ABOW さん
 
 - Twitter: https://twitter.com/saronpasu
 

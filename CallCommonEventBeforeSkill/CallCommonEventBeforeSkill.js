@@ -7,7 +7,7 @@
  * order "call common event before use skill".
  * @author saronpasu
  *
- * @version 0.1.2
+ * @version 0.1.4
  *
  * @help
  * Usage:
@@ -21,7 +21,7 @@
  * オーダー内容は「スキル使用前にコモンイベント」です。
  * @author saronpasu
  *
- * @version 0.1.2
+ * @version 0.1.4
  *
  * @help
  * 使い方:
@@ -83,9 +83,18 @@ Imported.CallCommonEventBeforeSkill = {};
 
     var flags = [false, false];
 
+    var Game_Battler_onAllActionsEnd = Game_Battler.prototype.onAllActionsEnd;
+    Game_Battler.prototype.onAllActionsEnd = function() {
+        console.log('called');
+        flags = [false, false];
+
+        Game_Battler_onAllActionsEnd.call(this);
+    }
+
     var Game_Battler_currentAction = Game_Battler.prototype.currentAction;
     Game_Battler.prototype.currentAction = function() {
-        
+        console.log(flags);
+
         if(flags[0]) {
             return Game_Battler_currentAction.call(this);
         }
