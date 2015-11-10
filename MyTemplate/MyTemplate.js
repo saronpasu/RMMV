@@ -4,15 +4,19 @@
 
 /*:
  * @plugindesc Description
+ *
  * @author saronpasu
  *
  * @version 0.0.1
+ *
+ * @help
  *
  * @param PluginParam
  * @desc Description
  * @default 
  *
- * @help
+ * Plugin Command:
+ *   Command argment      # description
  *
  * Help message write here.
  *
@@ -20,13 +24,17 @@
 
 /*:ja
  * @plugindesc 説明とか。
+ *
  * @author saronpasu
+ *
+ * @help
  *
  * @param PluginParam
  * @desc 説明とか
  * @default 
  *
- * @help
+ * Plugin Command:
+ *   Command argments      # 説明とか
  *
  * ヘルプメッセージを書くとこ。
  *
@@ -40,12 +48,15 @@
  *
  */
 
+var Imported = Imported || {};
+Imported.PluginName = {};
+
 (function() {
 
     'use strict';
 
-    var Imported = Imported || {};
-    Imported.PluginName = {};
+    var parameters = PluginManager.parameters('PluginName');
+    var PluginParam = String(parameters['PluginParam'] || 'default');
 
 })();
 
