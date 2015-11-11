@@ -76,6 +76,7 @@ Imported.GeoManager = {};
     };
 
     var GeoManager = function() {
+        this.initialize.apply(this, arguments);
     };
 
     GeoManager.prototype.initialize = function(unit, opts, type) {
@@ -90,28 +91,28 @@ Imported.GeoManager = {};
     };
 
     GeoManager.prototype.setupOpts = function(opts) {
-        defualtOpts = {
+        var defaultOpts = {
             enableHighAccuracy: true,
-            maximumAge: 30000,
-            timeout: 27000
+            maximumAge: 0,
+            timeout: 10000
         };
         opts = opts || defaultOpts;
         this._opts = opts;
     };
 
     GeoManager.prototype.isSupport = function() {
-        return !!navigator.geolocation;
+        return !!(navigator.geolocation && !Utils.isNwjs());
     };
 
     GeoManager.prototype.successFunction = function(position) {
         var result = {
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-            altitude: position.coords.altitude,
-            accuracy: position.coords.accuracy,
-            altitudeAccuracy: position.coords.altitudeAccuracy,
-            heading: position.coords.heading,
-            speed: position.coords.heading
+            latitude: position['coords']['latitude'],
+            longitude: position['coords']['longitude'],
+            altitude: position['coords']['altitude'],
+            accuracy: position['coords']['accuracy'],
+            altitudeAccuracy: position['coords']['altitudeAccuracy'],
+            heading: position['coords']['heading'],
+            speed: position['coords']['heading']
         };
         return result;
     };
@@ -156,18 +157,18 @@ Imported.GeoManager = {};
     // navigator.geolocation.getCurrentPosition をラップしてるだけ。
     GeoManager.prototype.getCurrent = function(successFunc, errorFunc, opts) {
         var successFunc = successFunc || this.successFunction;
-        if (this.isValidFunc(successFunc)) {
+        if (!this.isValidFunc(successFunc)) {
             console.error('invalid arguments');
             return false;
         }
 
         var errorFunc = errorFunc || this.errorFunction;
-        if (this.isValidFunc(errorFunc)) {
+        if (!this.isValidFunc(errorFunc)) {
             console.error('invalid arguments');
             return false;
         }
         var opts = opts || this._opts;
-        if (this.isValidOpts(opts)) {
+        if (!this.isValidOpts(opts)) {
             console.error('invalid option');
             return false;
         }
@@ -178,18 +179,18 @@ Imported.GeoManager = {};
     // navigator.geolocation.watchPosition をラップしてるだけ。
     GeoManager.prototype.startWatch = function(successFunc, errorFunc, opts) {
         var successFunc = successFunc || this.successFunction;
-        if (this.isValidFunc(successFunc)) {
+        if (!this.isValidFunc(successFunc)) {
             console.error('invalid arguments');
             return false;
         }
 
         var errorFunc = errorFunc || this.errorFunction;
-        if (this.isValidFunc(errorFunc)) {
+        if (!this.isValidFunc(errorFunc)) {
             console.error('invalid arguments');
             return false;
         }
         var opts = opts || this._opts;
-        if (this.isValidOpts(opts)) {
+        if (!this.isValidOpts(opts)) {
             console.error('invalid option');
             return false;
         }
@@ -233,9 +234,9 @@ Imported.GeoManager = {};
 
         var W = Math.sqrt(1 - E2 * Math.pow(Math.sin(P), 2));
         var N = Rx / W;
-        var M = Rx * (1 - E2) / Math.pow(w, 3);
+        var M = Rx * (1 - E2) / Math.pow(W, 3);
 
-        return Math.sqrt(Math.pow(Dy * M, 2) * Math.pow(Dx * N * Math.cos(P), 2));
+        return Math.sqrt(Math.pow(Dy * M, 2) + Math.pow(Dx * N * Math.cos(P), 2));
     };
 
     // 単位変換

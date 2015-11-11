@@ -61,6 +61,11 @@ Android アプリのビルド方法は、 RPG ツクールMV(RPGMaker MV) の付
 }
 ```
 
+> xwalk_permissions
+>> Geolocation
+
+この設定が「位置情報取得を許可する」やつです。
+
 これで、「位置情報取得」のパーミッションは設定できました。
 
 あとは、マニュアル記載通りの手順でビルドすれば完成です。
@@ -70,6 +75,11 @@ Android アプリのビルド方法は、 RPG ツクールMV(RPGMaker MV) の付
 
 あとで書く
 
+
+### 技術的な話
+
+- どうして watchPosition 使わないで getCurrentPosition なの？
+   - watchPosition だと。スタンバイ中でもバリバリ測位してバッテリー消耗するみたいだから。
 
 ## History
 version 0.0.1

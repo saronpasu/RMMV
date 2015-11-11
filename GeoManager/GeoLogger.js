@@ -23,11 +23,11 @@
  *
  * @param MaximumAge
  * @desc geo location api option (ms)
- * @default 30000
+ * @default 0
  *
  * @param Timeout
  * @desc geo location api option (ms)
- * @default 27000
+ * @default 10000
  *
  * @param Interval
  * @desc logging interval (sec)
@@ -67,11 +67,11 @@
  *
  * @param MaximumAge
  * @desc ジオロケーションAPIのオプション (ミリ秒)
- * @default 30000
+ * @default 0
  *
  * @param Timeout
  * @desc ジオロケーションAPIのオプション (ミリ秒)
- * @default 27000
+ * @default 10000
  *
  * @param Interval
  * @desc ジオログ取得間隔 (秒)
@@ -111,6 +111,10 @@ if (Imported['GeoManager'] === undefined ) {
 
 Imported.GeoLogger = {};
 
+// TODO リリース時には消す デバッグ用
+var DEBUG = {};
+
+
 (function() {
 
     'use strict';
@@ -118,9 +122,9 @@ Imported.GeoLogger = {};
     var parameters = PluginManager.parameters('GeoLogger');
     var Unit = String(parameters['Unit'] || 'm');
     var HighAccuracy = Boolean(parameters['HighAccuracy'] || true);
-    var MaximumAge = Number(parameters['MaximumAge'] || 30000);
-    var Timeout = Number(parameters['Timeout'] || 27000);
-    var Interval = Number(parameters['Interval'] || 30);
+    var MaximumAge = Number(parameters['MaximumAge'] || 0);
+    var Timeout = Number(parameters['Timeout'] || 70000);
+    var Interval = Number(parameters['Interval'] || 5);
 
     // GeoManager をインポート
     var GeoManager = Imported['GeoManager'];
@@ -130,12 +134,12 @@ Imported.GeoLogger = {};
     Game_Interpreter.prototype.pluginCommand = function(command, args) {
         _Game_Interpreter_pluginCommand.call(this, command, args);
         if (command === 'GeoLogger') {
-            var chikuwa = new Chikuwa();
             switch (args[0]) {
                 case 'isSupport':
                     if (/^[0-9]+$/.test(args[1])) {
-                        $gameVariables[args[1]] = geoLogger.isSupport() ? 0 : 1;
+                        $gameVariables.setValue(Number(args[1]), geoLogger.isSupport() ? 1 : 0);
                     }
+                    break;
                 case 'Start':
                     geoLogger.start();
                     break;
@@ -147,7 +151,7 @@ Imported.GeoLogger = {};
                     break;
                 case 'isRunning':
                     if (/^[0-9]+$/.test(args[1])) {
-                        $gameVariables[args[1]] = geoLogger.isLogging() ? 0 : 1;
+                        $gameVariables.setValue(Number(args[1]), geoLogger.isLogging() ? 1 : 0);
                     }
                     break;
                 case 'ChangeUnit':
@@ -157,7 +161,7 @@ Imported.GeoLogger = {};
                     break;
                 case 'TotalDistance':
                     if (/^[0-9]+$/.test(args[1])) {
-                        $gameVariables[args[1]] = geoLogger.getTotalDistance();
+                        $gameVariables.setValue(Number(args[1]), geoLogger.getTotalDistance());
                     }
                     break;
                 default:
@@ -167,18 +171,19 @@ Imported.GeoLogger = {};
 
     // インターバルタイマーさん。バックグラウンドでの測地に必要。
     var IntervalTimer = function() {
+        this.initialize.apply(this, arguments);
     };
 
     IntervalTimer.prototype.initialize = function(func, interval) {
         this._working = false;
-        this._frame = 0;
+        this._frames = 0;
         this.setup(func, interval);
     };
 
     IntervalTimer.prototype.setup = function(func, interval) {
         this._interval = interval || Interval;
         this._interval = this._interval * 60;
-        this._func = func || geoLogger.logging;
+        this._func = func || null;
     };
 
     IntervalTimer.prototype.setFunction = function(func) {
@@ -186,7 +191,7 @@ Imported.GeoLogger = {};
     };
 
     IntervalTimer.prototype.setInterval = function(param) {
-        this._interval = param;
+        this._interval = param || this._interval;
     };
 
     IntervalTimer.prototype.start = function(interval) {
@@ -228,16 +233,21 @@ Imported.GeoLogger = {};
     };
 
     IntervalTimer.prototype.clear = function() {
-        this._frame = 0;
+        this._frames = 0;
     };
 
     var GeoLogger = function() {
+        this.initialize.apply(this, arguments);
     };
 
     // ジオレコーダーさん。本体はここよー。
     GeoLogger.prototype.initialize = function(unit, opts) {
         this.setup(unit);
         this.setupOpts(opts);
+
+        if (intervalTimer) {
+            intervalTimer.setFunction(this.logging.bind(this));
+        }
     };
 
     GeoLogger.prototype.isValidUnit = function(param) {
@@ -246,14 +256,14 @@ Imported.GeoLogger = {};
 
     GeoLogger.prototype.successFunction = function(position) {
         this._position = {
-            lat: positon.coords.latitude,
-            lon: position.coords.longitude
+            lat: position['coords']['latitude'],
+            lon: position['coords']['longitude']
         };
     };
 
     GeoLogger.prototype.setup = function(unit) {
-        this._GeoManager = GeoManager.new();
-        this._positoin = null;
+        this._GeoManager = new GeoManager();
+        this._position = null;
         this._logging = false;
         this._unit = unit || Unit;
     };
@@ -268,13 +278,18 @@ Imported.GeoLogger = {};
     };
 
     GeoLogger.prototype.setupOpts = function(opts) {
-        defualtOpts = {
+        var defaultOpts = {
             enableHighAccuracy: HighAccuracy,
             maximumAge: MaximumAge,
             timeout: Timeout
         };
         var opts = opts || defaultOpts;
         this._opts = opts;
+        this._GeoManager.setupOpts(this._opts);
+    };
+
+    GeoLogger.prototype.isSupport = function() {
+        return this._GeoManager.isSupport();
     };
 
     GeoLogger.prototype.isVlaidUnit = function(unit) {
@@ -289,11 +304,12 @@ Imported.GeoLogger = {};
     };
 
     GeoLogger.prototype.getCurrent = function() {
-        this._GeoManager.getCurrent(this.successFunction);
+        this._GeoManager.getCurrent(this.successFunction.bind(this));
+        return this._position;
     };
 
     GeoLogger.prototype.startLogging = function() {
-        this._GeoManager.startWatch(this.successFunction);
+        this._GeoManager.getCurrent(this.successFunction.bind(this));
         this._logging = true;
         return true;
     };
@@ -302,7 +318,6 @@ Imported.GeoLogger = {};
         if (!this.isLogging()) {
             return false;
         }
-        this._GeoManager.stopWatch();
         this._logging = false;
         return true;
     };
@@ -312,8 +327,12 @@ Imported.GeoLogger = {};
     };
 
     GeoLogger.prototype.getTotalDistance = function() {
-        var totalDistance = this._geoLog.totalDistance;
-        return this._GeoManager.convertUnit(totalDistance, this._unit);
+        var totalDistance = geoLog.totalDistance;
+        if (totalDistance) {
+            return this._GeoManager.convertUnit(totalDistance, this._unit);
+        } else {
+            return 0;
+        }
     };
 
     GeoLogger.prototype.isLogging = function() {
@@ -332,12 +351,12 @@ Imported.GeoLogger = {};
         };
     };
 
-    GeoLogger.prototype.calcDistance = function() {
-        this._geoLog.totalDistance = 0;
-    };
-
     GeoLogger.prototype.addLog = function(logData) {
         var masterLog = geoLog;
+        if (masterLog.currentPosition.lat === logData.position.lat &&
+            masterLog.currentPosition.lon === logData.position.lon) {
+            return;
+        }
         masterLog.prevPosition = masterLog.currentPosition;
         masterLog.currentPosition = logData.position;
         masterLog.totalDistance += logData.distance;
@@ -345,8 +364,8 @@ Imported.GeoLogger = {};
 
     // NOTE: インターバルタイマーで実行する関数
     GeoLogger.prototype.logging = function() {
-        this.startLogging(this.successFuntion);
-        if (geoLog.currentPosition.lat === null) {
+        this.getCurrent();
+        if (geoLog.currentPosition === null) {
             geoLog.currentPosition = this._position;
             return;
         }
@@ -366,13 +385,15 @@ Imported.GeoLogger = {};
     };
 
     GeoLogger.prototype.start = function() {
-        this.startLogging(this.successFunction);
+        this.startLogging();
         geoLog.currentPosition = this._position;
+        intervalTimer.setFunction(this.logging.bind(this));
         intervalTimer.start();
     };
 
     GeoLogger.prototype.stop = function() {
        this._logging = false;
+       this.stopLogging();
        intervalTimer.stop();
     };
 
@@ -400,13 +421,19 @@ Imported.GeoLogger = {};
         intervalTimer = new IntervalTimer();
         geoLogger = new GeoLogger();
         geoLog = new GeoLog();
+
+        // TODO リリース時には消す デバッグ用
+        DEBUG.geoLog = geoLog;
+        DEBUG.geoLogger = geoLogger;
+        DEBUG.intervalTimer = intervalTimer;
     };
 
     var DataManager_makeSaveContents = DataManager.makeSaveContents;
     DataManager.makeSaveContents = function() {
-        var contents = DataManger_makeSaveContents();
+        var contents = DataManager_makeSaveContents();
 
         contents.geoLog = geoLog;
+        return contents;
     };
 
     var DataManager_extractSaveContents = DataManager.extractSaveContents;
@@ -428,14 +455,14 @@ Imported.GeoLogger = {};
     // エクスポート用のアクセサ
     var Accessor = {};
     var geologger = new GeoLogger();
-    Accessor.get = geologger.getCurrent;
-    Accessor.start = geologger.start;
-    Accessor.stop = geologger.stop;
-    Accessor.clear = geologger.clear;
-    Accessor.distance = geologger.getTotalDistance;
+    Accessor.get = geologger.getCurrent.bind(geologger);
+    Accessor.start = geologger.start.bind(geologger);
+    Accessor.stop = geologger.stop.bind(geologger);
+    Accessor.clear = geologger.clear.bind(geologger);
+    Accessor.distance = geologger.getTotalDistance.bind(geologger);
 
     // エクスポート
-    Imported.GeoLogger = Accessor;    
+    Imported.GeoLogger = Accessor;
 
 })();
 
