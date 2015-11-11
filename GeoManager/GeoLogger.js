@@ -140,13 +140,13 @@ var DEBUG = {};
                         $gameVariables.setValue(Number(args[1]), geoLogger.isSupport() ? 1 : 0);
                     }
                     break;
-                case 'Start':
+                case 'start':
                     geoLogger.start();
                     break;
-                case 'Stop':
+                case 'stop':
                     geoLogger.stop();
                     break;
-                case 'Clear':
+                case 'clear':
                     geoLogger.clear();
                     break;
                 case 'isRunning':
@@ -159,7 +159,7 @@ var DEBUG = {};
                         geoLogger.changeUnit(args[1]);
                     }
                     break;
-                case 'TotalDistance':
+                case 'totalDistance':
                     if (/^[0-9]+$/.test(args[1])) {
                         $gameVariables.setValue(Number(args[1]), geoLogger.getTotalDistance());
                     }
