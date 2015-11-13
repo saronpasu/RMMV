@@ -111,9 +111,10 @@ if (Imported['GeoManager'] === undefined ) {
 
 Imported.GeoLogger = {};
 
+/*
 // TODO リリース時には消す デバッグ用
 var DEBUG = {};
-
+*/
 
 (function() {
 
@@ -274,7 +275,7 @@ var DEBUG = {};
             opts.maximumAge && typeof opts.maximumAge === 'number',
             opts.timeout && typeof opts.timeout === 'number'
         ];
-        return result.filter(function(x){x}).length === 0;
+        return result.filter(function(x){x;}).length === 0;
     };
 
     GeoLogger.prototype.setupOpts = function(opts) {
@@ -283,7 +284,7 @@ var DEBUG = {};
             maximumAge: MaximumAge,
             timeout: Timeout
         };
-        var opts = opts || defaultOpts;
+        opts = opts || defaultOpts;
         this._opts = opts;
         this._GeoManager.setupOpts(this._opts);
     };
@@ -300,7 +301,8 @@ var DEBUG = {};
         if (this.isValidUnit(unit)) {
             return false;
         }
-        this._unit = unit;
+        this._unit = unit || this._unit;
+        this._GeoManager.setUnit(this._unit);
     };
 
     GeoLogger.prototype.getCurrent = function() {
@@ -327,9 +329,8 @@ var DEBUG = {};
     };
 
     GeoLogger.prototype.getTotalDistance = function() {
-        var totalDistance = geoLog.totalDistance;
-        if (totalDistance) {
-            return this._GeoManager.convertUnit(totalDistance, this._unit);
+        if (geoLog.totalDistance) {
+            return this._GeoManager.convertUnit(geoLog.totalDistance);
         } else {
             return 0;
         }
@@ -359,14 +360,25 @@ var DEBUG = {};
         }
         masterLog.prevPosition = masterLog.currentPosition;
         masterLog.currentPosition = logData.position;
-        masterLog.totalDistance += logData.distance;
+        if (logData.distance) {
+            masterLog.totalDistance += logData.distance;
+        }
     };
 
     // NOTE: インターバルタイマーで実行する関数
     GeoLogger.prototype.logging = function() {
         this.getCurrent();
-        if (geoLog.currentPosition === null) {
+        if (!this._position) {
+            return;
+        } else if (!geoLog.currentPosition && this._position) {
             geoLog.currentPosition = this._position;
+            geoLog.totalDistance = 0;
+            return;
+        } else if (
+            this._position &&
+            this._position.lat === geoLog.currentPosition.lat &&
+            this._position.lon === geoLog.currentPosition.lon
+        ) {
             return;
         }
         var prevPosition = geoLog.currentPosition;
@@ -416,21 +428,24 @@ var DEBUG = {};
 
     var DataManager_createGameObjects = DataManager.createGameObjects;
     DataManager.createGameObjects = function() {
-        DataManager_createGameObjects();
+        new DataManager_createGameObjects();
 
         intervalTimer = new IntervalTimer();
         geoLogger = new GeoLogger();
         geoLog = new GeoLog();
 
+/*
         // TODO リリース時には消す デバッグ用
         DEBUG.geoLog = geoLog;
         DEBUG.geoLogger = geoLogger;
         DEBUG.intervalTimer = intervalTimer;
+*/
+
     };
 
     var DataManager_makeSaveContents = DataManager.makeSaveContents;
     DataManager.makeSaveContents = function() {
-        var contents = DataManager_makeSaveContents();
+        var contents = new DataManager_makeSaveContents();
 
         contents.geoLog = geoLog;
         return contents;
@@ -438,7 +453,7 @@ var DEBUG = {};
 
     var DataManager_extractSaveContents = DataManager.extractSaveContents;
     DataManager.extractSaveContents = function(contents) {
-        DataManager_extractSaveContents(contents);
+        new DataManager_extractSaveContents(contents);
 
         geoLog = contents.geoLog;
     };
@@ -465,4 +480,3 @@ var DEBUG = {};
     Imported.GeoLogger = Accessor;
 
 })();
-

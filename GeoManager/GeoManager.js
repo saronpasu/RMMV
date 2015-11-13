@@ -87,6 +87,7 @@ Imported.GeoManager = {};
     GeoManager.prototype.setup = function(unit, type) {
         this._type = Types[type] || Types['WGS84'];
         this._unit = unit || 'm';
+        this._rate = UnitRate[this._unit] || UnitRate['m'];
         this._watchId = null;
     };
 
@@ -99,6 +100,11 @@ Imported.GeoManager = {};
         opts = opts || defaultOpts;
         this._opts = opts;
     };
+
+    GeoManager.prototype.setUnit = function(unit) {
+        this._unit = unit || this._unit;
+        this._rate  = UnitRate[this._unit] || UnitRate['m'];
+    }
 
     GeoManager.prototype.isSupport = function() {
         return !!(navigator.geolocation && !Utils.isNwjs());
@@ -142,7 +148,7 @@ Imported.GeoManager = {};
     };
 
     GeoManager.prototype.isValidUnit = function(param) {
-        return typeof param === 'string' && /^(m|km|ft|ml)$/.test(param)
+        return typeof param === 'string' && /^(m|km|ft|ml)$/.test(param);
     };
 
     GeoManager.prototype.isValidOpts = function(opts) {
@@ -151,23 +157,23 @@ Imported.GeoManager = {};
             opts.maximumAge && typeof opts.maximumAge === 'number',
             opts.timeout && typeof opts.timeout === 'number'
         ];
-        return result.filter(function(x){x}).length === 0;
+        return (result.filter(function(x){x;}).length === 0);
     };
 
     // navigator.geolocation.getCurrentPosition をラップしてるだけ。
     GeoManager.prototype.getCurrent = function(successFunc, errorFunc, opts) {
-        var successFunc = successFunc || this.successFunction;
+        successFunc = successFunc || this.successFunction;
         if (!this.isValidFunc(successFunc)) {
             console.error('invalid arguments');
             return false;
         }
 
-        var errorFunc = errorFunc || this.errorFunction;
+        errorFunc = errorFunc || this.errorFunction;
         if (!this.isValidFunc(errorFunc)) {
             console.error('invalid arguments');
             return false;
         }
-        var opts = opts || this._opts;
+        opts = opts || this._opts;
         if (!this.isValidOpts(opts)) {
             console.error('invalid option');
             return false;
@@ -178,18 +184,18 @@ Imported.GeoManager = {};
 
     // navigator.geolocation.watchPosition をラップしてるだけ。
     GeoManager.prototype.startWatch = function(successFunc, errorFunc, opts) {
-        var successFunc = successFunc || this.successFunction;
+        successFunc = successFunc || this.successFunction;
         if (!this.isValidFunc(successFunc)) {
             console.error('invalid arguments');
             return false;
         }
 
-        var errorFunc = errorFunc || this.errorFunction;
+        errorFunc = errorFunc || this.errorFunction;
         if (!this.isValidFunc(errorFunc)) {
             console.error('invalid arguments');
             return false;
         }
-        var opts = opts || this._opts;
+        opts = opts || this._opts;
         if (!this.isValidOpts(opts)) {
             console.error('invalid option');
             return false;
@@ -201,7 +207,7 @@ Imported.GeoManager = {};
 
     // navigator.geolocation.clearWatch をラップしてるだけ。
     GeoManager.prototype.stopWatch = function(watchId) {
-        var watchId = watchId || this._watchId;
+        watchId = watchId || this._watchId;
         if (!watchId) {
             console.error('not have watchId');
             return false;
@@ -213,7 +219,7 @@ Imported.GeoManager = {};
 
     // 地球上の２座標間の距離を測位して任意の単位で返す
     GeoManager.prototype.distance = function(lat1, lon1, lat2, lon2, unit) {
-        var unit = unit || this._unit;
+        unit = unit || this._unit;
         return this.convertUnit(this.calcHubenyFormula(lat1, lon1, lat2, lon2), unit);
     };
 
@@ -241,6 +247,7 @@ Imported.GeoManager = {};
 
     // 単位変換
     GeoManager.prototype.convertUnit = function(value, unit) {
+        unit = unit || this._unit;
         return Math.floor(value * UnitRate[unit]);
     };
 
@@ -248,4 +255,3 @@ Imported.GeoManager = {};
     Imported.GeoManager = GeoManager;
 
 })();
-
