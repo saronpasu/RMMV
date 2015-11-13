@@ -13,7 +13,7 @@
  *
  * @param PluginParam
  * @desc Description
- * @default 
+ * @default
  *
  * Plugin Command:
  *   Command argment      # description
@@ -31,7 +31,7 @@
  *
  * @param PluginParam
  * @desc 説明とか
- * @default 
+ * @default
  *
  * Plugin Command:
  *   Command argments      # 説明とか
@@ -56,7 +56,6 @@ Imported.PluginName = {};
     'use strict';
 
     var parameters = PluginManager.parameters('PluginName');
-    var PluginParam = String(parameters['PluginParam'] || 'default');
+    var PluginParam = String(parameters['PluginManager'] || 'default');
 
 })();
-
