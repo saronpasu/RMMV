@@ -105,7 +105,7 @@
 var Imported = Imported || {};
 
 if (Imported['GeoManager'] === undefined ) {
-    console.error('Download GeoManager.js [url]');
+    console.error('Download GeoManager.js [https://github.com/saronpasu/RMMV/blob/master/GeoManager/GeoManager.js]');
     throw new Error('This plugin needs GeoManager.js');
 }
 
