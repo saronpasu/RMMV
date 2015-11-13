@@ -37,62 +37,48 @@
 
 「GeoLogger」は主にプラグインコマンドで制御します。
 
-> GeoLogger isSupport 1
->> 位置情報の取得に対応しているかどうかを変数「０００１」へ返します。（対応なら１、非対応なら０）
-
-> GeoLogger start
->> 位置情報の記録を開始します
-
-> GeoLogger stop
->> 位置情報の記録を終了します
-
-> GeoLogger clear
->> 位置情報の記録を削除します
-
-> GeoLogger isRunning 1
-> 位置情報の取得を実行しているかどうかを変数「０００１」へ返します。（実行中なら１、停止中なら０）
-
-> GeoLogger ChangeUnit km
->> 移動距離の単位を変更します。（対応している単位は、メートル「m」、キロメートル「km」、フィート「ft」、マイル「ml」です。
-
-> GeoLogger totalDistance 1
->> 移動距離を変数「０００１」へ返します。（正しく取得できなかった場合は０を返します）
+- GeoLogger isSupport 1
+   - 位置情報の取得に対応しているかどうかを変数「０００１」へ返します。（対応なら１、非対応なら０）
+- GeoLogger start
+   - 位置情報の記録を開始します
+- GeoLogger stop
+   - 位置情報の記録を終了します
+- GeoLogger clear
+   - 位置情報の記録を削除します
+- GeoLogger isRunning 1
+   - 位置情報の取得を実行しているかどうかを変数「０００１」へ返します。（実行中なら１、停止中なら０）
+- GeoLogger ChangeUnit km
+   - 移動距離の単位を変更します。（対応している単位は、メートル「m」、キロメートル「km」、フィート「ft」、マイル「ml」です。
+- GeoLogger totalDistance 1
+   - 移動距離を変数「０００１」へ返します。（正しく取得できなかった場合は０を返します）
 
 プラグインパラメータは次の通りです。
 
-> Unit
->> 移動距離の単位です。初期値は「メートル(m)」です。
-
-> HighAccuracy
->> ジオロケーションAPIのオプション値です。初期値は「true」です。
-
-> MaximumAge
->> ジオロケーションAPIのオプション値です。初期値は「0」です。
-
-> Timeout
->> ジオロケーションAPIのオプション値です。初期値は「10000」です。（単位はミリ秒）
-
-> Interval
->> 位置情報の取得間隔です。初期値は「１０」です。（単位は秒）
+- Unit
+   - 移動距離の単位です。初期値は「メートル(m)」です。
+- HighAccuracy
+   - ジオロケーションAPIのオプション値です。初期値は「true」です。
+- MaximumAge
+   - ジオロケーションAPIのオプション値です。初期値は「0」です。
+- Timeout
+   - ジオロケーションAPIのオプション値です。初期値は「10000」です。（単位はミリ秒）
+- Interval
+   - 位置情報の取得間隔です。初期値は「１０」です。（単位は秒）
 
 
 その他に、スクリプト実行にも対応しています。
 
 
-> Imported.GeoLogger.start()
->> 位置情報の記録を開始します。
-
-> Imported.GeoLogger.stop()
->> 位置情報の記録を終了します。
-
-> Imported.GeoLogger.clear()
->> 位置情報の記録を削除します。
-
-> Imported.GeoLogger.getCurrent()
->> 現在位置の緯度、経度を取得します。
-
-> Imported.GeoLogger.getTotalDistance()
->> 移動距離を取得します。
+- Imported.GeoLogger.start()
+   - 位置情報の記録を開始します。
+- Imported.GeoLogger.stop()
+   - 位置情報の記録を終了します。
+- Imported.GeoLogger.clear()
+   - 位置情報の記録を削除します。
+- Imported.GeoLogger.getCurrent()
+   - 現在位置の緯度、経度を取得します。
+- Imported.GeoLogger.getTotalDistance()
+   - 移動距離を取得します。
 
 しかし、プラグイン製作者の方には「GeoLogger.js」ではなく。「GeoManager.js」を使うことをオススメします。
 
