@@ -75,7 +75,7 @@
  *
  * @param Interval
  * @desc ジオログ取得間隔 (秒)
- * @default 30
+ * @default 10
  *
  * Plugin Command:
  *   GeoLogger isSupport 1      # ジオロケーションAPIがサポートされているかどうかを変数「１」に返します（０か１）
@@ -111,11 +111,6 @@ if (Imported['GeoManager'] === undefined ) {
 
 Imported.GeoLogger = {};
 
-/*
-// TODO リリース時には消す デバッグ用
-var DEBUG = {};
-*/
-
 (function() {
 
     'use strict';
@@ -125,7 +120,7 @@ var DEBUG = {};
     var HighAccuracy = Boolean(parameters['HighAccuracy'] || true);
     var MaximumAge = Number(parameters['MaximumAge'] || 0);
     var Timeout = Number(parameters['Timeout'] || 70000);
-    var Interval = Number(parameters['Interval'] || 5);
+    var Interval = Number(parameters['Interval'] || 10);
 
     // GeoManager をインポート
     var GeoManager = Imported['GeoManager'];
@@ -434,12 +429,6 @@ var DEBUG = {};
         geoLogger = new GeoLogger();
         geoLog = new GeoLog();
 
-/*
-        // TODO リリース時には消す デバッグ用
-        DEBUG.geoLog = geoLog;
-        DEBUG.geoLogger = geoLogger;
-        DEBUG.intervalTimer = intervalTimer;
-*/
 
     };
 

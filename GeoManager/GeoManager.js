@@ -23,7 +23,7 @@
  */
 
 /*:ja
- * @plugindesc 説明とか。
+ * @plugindesc 位置情報を取得、距離計算をするモジュール
  * @author saronpasu
  *
  * @param Type
