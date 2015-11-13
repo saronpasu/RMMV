@@ -56,12 +56,16 @@
 
 > Unit
 >> 移動距離の単位です。初期値は「メートル(m)」です。
+
 > HighAccuracy
 >> ジオロケーションAPIのオプション値です。初期値は「true」です。
+
 > MaximumAge
 >> ジオロケーションAPIのオプション値です。初期値は「0」です。
+
 > Timeout
 >> ジオロケーションAPIのオプション値です。初期値は「10000」です。（単位はミリ秒）
+
 > Interval
 >> 位置情報の取得間隔です。初期値は「１０」です。（単位は秒）
 
@@ -71,12 +75,16 @@
 
 > Imported.GeoLogger.start()
 >> 位置情報の記録を開始します。
+
 > Imported.GeoLogger.stop()
 >> 位置情報の記録を終了します。
+
 > Imported.GeoLogger.clear()
 >> 位置情報の記録を削除します。
+
 > Imported.GeoLogger.getCurrent()
 >> 現在位置の緯度、経度を取得します。
+
 > Imported.GeoLogger.getTotalDistance()
 >> 移動距離を取得します。
 
