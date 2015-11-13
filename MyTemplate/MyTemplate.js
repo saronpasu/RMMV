@@ -56,6 +56,6 @@ Imported.PluginName = {};
     'use strict';
 
     var parameters = PluginManager.parameters('PluginName');
-    var PluginParam = String(parameters['PluginManager'] || 'default');
+    var PluginParam = String(parameters['PluginParam'] || 'default');
 
 })();
