@@ -58,4 +58,20 @@ Imported.PluginName = {};
     var parameters = PluginManager.parameters('PluginName');
     var PluginParam = String(parameters['PluginParam'] || 'default');
 
+    var _Game_Interpreter_pluginCommand =
+            Game_Interpreter.prototype.pluginCommand;
+    Game_Interpreter.prototype.pluginCommand = function(command, args) {
+        _Game_Interpreter_pluginCommand.call(this, command, args);
+        if (command === 'CommandName') {
+        }
+    };
+
+    // クロージャの関数をテスト用にエクスポート
+    try {
+        if (should) {
+            // exports.MyTemplate = LocalFunction;
+        }
+    }
+    catch(e) {
+    }
 })();
