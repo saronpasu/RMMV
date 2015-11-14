@@ -1,3 +1,5 @@
+isTest = true;
+
 should = require('chai').should();
 sinon = require('sinon');
 

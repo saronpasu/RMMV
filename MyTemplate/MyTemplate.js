@@ -68,7 +68,7 @@ Imported.PluginName = {};
 
     // クロージャの関数をテスト用にエクスポート
     try {
-        if (should) {
+        if (isTest) {
             // exports.MyTemplate = LocalFunction;
         }
     }

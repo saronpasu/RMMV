@@ -1,13 +1,15 @@
+isTest = true;
+
 should = require('chai').should();
 sinon = require('sinon');
 
-describe('IsAllItemHave', function() {
+describe('HasAllItems', function() {
     // initialize
     before(function() {
         // define mock PluginManager
         PluginManager = {};
         PluginManager.parameters = sinon.stub()
-        .withArgs('IsAllItemHave').returns({
+        .withArgs('HasAllItems').returns({
             // PluginParam: 'default'
         });
         // define mock Game_Interpreter
@@ -20,13 +22,13 @@ describe('IsAllItemHave', function() {
         Game_Party.prototype.members = function() {};
 
         // import Test functions.
-        IsAllItemHave = require('../IsAllItemHave.js');
-        isAllItemHave = IsAllItemHave.isAllItemHave;
-        Game_Party.prototype.isAllItemHave = isAllItemHave;
-        pluginCommand = IsAllItemHave.pluginCommand;
+        HasAllItems = require('../HasAllItems.js');
+        hasAllItems = HasAllItems.hasAllItems;
+        Game_Party.prototype.hasAllItems = hasAllItems;
+        pluginCommand = HasAllItems.pluginCommand;
         Game_Interpreter.prototype.pluginCommand = pluginCommand;
-        isValidName = IsAllItemHave.isValidName;
-        isValidTargets = IsAllItemHave.isValidTargets;
+        isValidName = HasAllItems.isValidName;
+        isValidTargets = HasAllItems.isValidTargets;
     });
 
     describe('validator', function() {
@@ -76,15 +78,15 @@ describe('IsAllItemHave', function() {
         });
 
         it('target find', function() {
-            gameParty.isAllItemHave(['targetName']).should.be.true;
+            gameParty.hasAllItems(['targetName']).should.be.true;
         });
 
         it('two target find', function() {
-            gameParty.isAllItemHave(['targetName', 'otherTarget']).should.be.false;
+            gameParty.hasAllItems(['targetName', 'otherTarget']).should.be.false;
         });
 
         it('target not found', function() {
-            gameParty.isAllItemHave(['notMatchName']).should.be.false;
+            gameParty.hasAllItems(['notMatchName']).should.be.false;
         });
     });
 
@@ -100,15 +102,15 @@ describe('IsAllItemHave', function() {
         });
 
         it('one target find', function() {
-            gameParty.isAllItemHave(['targetName1', 'notMatchName2']).should.be.false;
+            gameParty.hasAllItems(['targetName1', 'notMatchName2']).should.be.false;
         });
 
         it('two targets not found', function() {
-            gameParty.isAllItemHave(['targetName1', 'targetName2']).should.be.true;
+            gameParty.hasAllItems(['targetName1', 'targetName2']).should.be.true;
         });
 
         it('target not found', function() {
-            gameParty.isAllItemHave(['notMatchName1', 'notMatchName2']).should.be.false;
+            gameParty.hasAllItems(['notMatchName1', 'notMatchName2']).should.be.false;
         });
     });
 
@@ -134,15 +136,15 @@ describe('IsAllItemHave', function() {
         });
 
         it('target find', function() {
-            gameParty.isAllItemHave(['targetName']).should.be.true;
+            gameParty.hasAllItems(['targetName']).should.be.true;
         });
 
         it('two targets not found', function() {
-            gameParty.isAllItemHave(['targetName', 'otherTarget']).should.be.false;
+            gameParty.hasAllItems(['targetName', 'otherTarget']).should.be.false;
         });
 
         it('target not found', function() {
-            gameParty.isAllItemHave(['notMatchName']).should.be.false;
+            gameParty.hasAllItems(['notMatchName']).should.be.false;
         });
     });
 
@@ -168,20 +170,20 @@ describe('IsAllItemHave', function() {
         });
 
         it('one target find', function() {
-            gameParty.isAllItemHave(['targetName1', 'notMatchName2']).should.be.false;
+            gameParty.hasAllItems(['targetName1', 'notMatchName2']).should.be.false;
         });
 
         it('two target find', function() {
-            gameParty.isAllItemHave(['targetName1', 'targetName2']).should.be.true;
+            gameParty.hasAllItems(['targetName1', 'targetName2']).should.be.true;
         });
 
         it('target not found', function() {
-            gameParty.isAllItemHave(['notMatchName1', 'notMatchName2']).should.be.false;
+            gameParty.hasAllItems(['notMatchName1', 'notMatchName2']).should.be.false;
         });
     });
 
     it('Party not have target item and equips', function() {
-        gameParty.isAllItemHave(['targetName']).should.be.false;
+        gameParty.hasAllItems(['targetName']).should.be.false;
     });
 
     describe('call from PluginCommand', function() {
@@ -203,16 +205,16 @@ describe('IsAllItemHave', function() {
                 sinon.stub($gameParty, 'allItems').returns(items);
                 sinon.stub($gameParty, 'members').returns([actor1, actor2]);
 
-                spy = sinon.spy($gameParty, 'isAllItemHave');
+                spy = sinon.spy($gameParty, 'hasAllItems');
             });
 
             it('valid argments', function() {
-                gameInterpreter.pluginCommand('isAllItemHave', ['1', 'foo', 'bar']);
+                gameInterpreter.pluginCommand('hasAllItems', ['1', 'foo', 'bar']);
                 spy.called.should.be.true;
             });
 
             it('invalid argments', function() {
-                gameInterpreter.pluginCommand('isAllItemHave', ['aaa', 'foo', 'bar']);
+                gameInterpreter.pluginCommand('hasAllItems', ['aaa', 'foo', 'bar']);
                 spy.called.should.be.false;
             });
 

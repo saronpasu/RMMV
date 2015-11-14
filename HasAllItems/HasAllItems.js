@@ -1,9 +1,9 @@
 //=============================================================================
-// IsAllItemHave.js
+// HasAllItems.js
 //=============================================================================
 
 /*:
- * @plugindesc Party members any items and equips check have item from name.
+ * @plugindesc Party members all items and equips check have item from name.
  *
  * @author saronpasu
  *
@@ -12,31 +12,31 @@
  * @help
  *
  * Plugin Command:
- *   Command IsAllItemHave SwitchId ItemNameA, ItemNameB, ...
+ *   Command HasAllItems SwitchId ItemNameA, ItemNameB, ...
  *     SwitchId -> check result.
  *     ItemNameA -> check ItemName
  *
  * Script:
- *   $gameParty.IsAllItemHave(['ItemNameA', 'ItemNameB']);
+ *   $gameParty.HasAllItems(['ItemNameA', 'ItemNameB']);
  *      return -> true (have item)
  *             -> false (not have item)
  *
  */
 
 /*:ja
- * @plugindesc 全員の所持品、装備の中からいずれかのアイテムを所持しているかどうかを返します。
+ * @plugindesc 全員の所持品、装備の中からすべてのアイテムを所持しているかどうかを返します。
  *
  * @author saronpasu
  *
  * @help
  *
  * Plugin Command:
- *   Command IsAllItemHave SwitchId ItemNameA, ItemNameB, ...
+ *   Command HasAllItems SwitchId ItemNameA, ItemNameB, ...
  *     SwitchId -> 持っているかどうかの結果を返すスイッチID
  *     ItemNameA -> 調べるアイテム名
  *
  * Script:
- *   $gameParty.IsAllItemHave(['ItemNameA', 'ItemNameB']);
+ *   $gameParty.HasAllItems(['ItemNameA', 'ItemNameB']);
  *      return -> true (アイテムを持っている場合）
  *             -> false (アイテムを持っていない場合)
  *
@@ -51,22 +51,22 @@
  */
 
 var Imported = Imported || {};
-Imported.IsAnyItemHave = {};
+Imported.HasAllItems = {};
 
 (function() {
 
     'use strict';
 
-    var parameters = PluginManager.parameters('IsAnyItemHave');
+    var parameters = PluginManager.parameters('HasAllItems');
 
     var _Game_Interpreter_pluginCommand =
             Game_Interpreter.prototype.pluginCommand;
     Game_Interpreter.prototype.pluginCommand = function(command, args) {
         _Game_Interpreter_pluginCommand.call(this, command, args);
-        if (command === 'isAnyItemHave') {
+        if (command === 'hasAllItems') {
             if (/^[0-9]+$/.test(args[0])) {
                 var targets = args.filter(function(i){return /^[^0-9]+$/.test(i);});
-                var result = $gameParty.isAnyItemHave(targets);
+                var result = $gameParty.hasAllItems(targets);
                 if (result) {
                     $gameSwitches.setValue(Number(args[0]), true);
                 }
@@ -85,7 +85,7 @@ Imported.IsAnyItemHave = {};
         return targets.filter(function(i){return isValidName(i);}).length !== 0;
     };
 
-    Game_Party.prototype.isAnyItemHave = function(targets) {
+    Game_Party.prototype.hasAllItems = function(targets) {
         if (!isValidTargets(targets)) {
             return false;
         }
@@ -101,13 +101,13 @@ Imported.IsAnyItemHave = {};
             }).length === 0 ? false : true;
         };
         var result = items.filter(condition);
-        return items.filter(condition).length === 0 ? false : true;
+        return items.filter(condition).length === targets.length ? true : false;
     };
 
     // クロージャの関数をテスト用にエクスポート
     try {
-        if (should) {
-            exports.isAnyItemHave = Game_Party.prototype.isAnyItemHave;
+        if (isTest) {
+            exports.hasAllItems = Game_Party.prototype.hasAllItems;
             exports.pluginCommand = Game_Interpreter.prototype.pluginCommand;
             exports.isValidName = isValidName;
             exports.isValidTargets = isValidTargets;

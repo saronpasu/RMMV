@@ -3,7 +3,7 @@
 //=============================================================================
 
 /*:
- * @plugindesc Party members all items and equips check have item from name.
+ * @plugindesc Party members any items and equips check have item from name.
  *
  * @author saronpasu
  *
@@ -24,7 +24,7 @@
  */
 
 /*:ja
- * @plugindesc 全員の所持品、装備の中からすべてのアイテムを所持しているかどうかを返します。
+ * @plugindesc 全員の所持品、装備の中からいずれかのアイテムを所持しているかどうかを返します。
  *
  * @author saronpasu
  *
@@ -51,22 +51,22 @@
  */
 
 var Imported = Imported || {};
-Imported.IsAllItemHave = {};
+Imported.HasAnyItems = {};
 
 (function() {
 
     'use strict';
 
-    var parameters = PluginManager.parameters('IsAllItemHave');
+    var parameters = PluginManager.parameters('HasAnyItems');
 
     var _Game_Interpreter_pluginCommand =
             Game_Interpreter.prototype.pluginCommand;
     Game_Interpreter.prototype.pluginCommand = function(command, args) {
         _Game_Interpreter_pluginCommand.call(this, command, args);
-        if (command === 'isAllItemHave') {
+        if (command === 'hasAnyItems') {
             if (/^[0-9]+$/.test(args[0])) {
                 var targets = args.filter(function(i){return /^[^0-9]+$/.test(i);});
-                var result = $gameParty.isAllItemHave(targets);
+                var result = $gameParty.hasAnyItems(targets);
                 if (result) {
                     $gameSwitches.setValue(Number(args[0]), true);
                 }
@@ -85,7 +85,7 @@ Imported.IsAllItemHave = {};
         return targets.filter(function(i){return isValidName(i);}).length !== 0;
     };
 
-    Game_Party.prototype.isAllItemHave = function(targets) {
+    Game_Party.prototype.hasAnyItems = function(targets) {
         if (!isValidTargets(targets)) {
             return false;
         }
@@ -101,13 +101,13 @@ Imported.IsAllItemHave = {};
             }).length === 0 ? false : true;
         };
         var result = items.filter(condition);
-        return items.filter(condition).length === targets.length ? true : false;
+        return items.filter(condition).length === 0 ? false : true;
     };
 
     // クロージャの関数をテスト用にエクスポート
     try {
-        if (should) {
-            exports.isAllItemHave = Game_Party.prototype.isAllItemHave;
+        if (isTest) {
+            exports.hasAnyItems = Game_Party.prototype.hasAnyItems;
             exports.pluginCommand = Game_Interpreter.prototype.pluginCommand;
             exports.isValidName = isValidName;
             exports.isValidTargets = isValidTargets;
