@@ -467,6 +467,7 @@ Imported.GeoLogger = {};
     var geologger = new GeoLogger();
     Accessor.get = geologger.getCurrent.bind(geologger);
     Accessor.start = geologger.start.bind(geologger);
+    Accessor.update = geologger.logging.bind(geologger);
     Accessor.stop = geologger.stop.bind(geologger);
     Accessor.clear = geologger.clear.bind(geologger);
     Accessor.distance = geologger.getTotalDistance.bind(geologger);
