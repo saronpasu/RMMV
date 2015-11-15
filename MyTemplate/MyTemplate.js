@@ -66,7 +66,10 @@ Imported.PluginName = {};
         }
     };
 
-    // クロージャの関数をテスト用にエクスポート
+    /* クロージャの関数をテスト用にエクスポート
+     * NOTE: NWjs で実行する際にエラーにならないように try catch 構文を使っています。
+     * もっとスマートな実装方法がないかな。
+     */
     try {
         if (isTest) {
             // exports.MyTemplate = LocalFunction;

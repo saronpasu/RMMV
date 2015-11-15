@@ -104,7 +104,10 @@ Imported.HasAllItems = {};
         return items.filter(condition).length === targets.length ? true : false;
     };
 
-    // クロージャの関数をテスト用にエクスポート
+    /* クロージャの関数をテスト用にエクスポート
+     * NOTE: NWjs で実行する際にエラーにならないように try catch 構文を使っています。
+     * もっとスマートな実装方法がないかな。
+     */
     try {
         if (isTest) {
             exports.hasAllItems = Game_Party.prototype.hasAllItems;
