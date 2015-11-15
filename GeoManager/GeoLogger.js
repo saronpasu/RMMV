@@ -9,7 +9,7 @@
  *
  * @author saronpasu
  *
- * @version 0.0.1
+ * @version 0.0.2
  *
  * @help
  *
@@ -36,6 +36,7 @@
  * Plugin Command:
  *   GeoLogger isSupport 1      # geo location api supported status into variables[1] (0 or 1)
  *   GeoLogger start            # start logging
+ *   GeoLogger update           # update log
  *   GeoLogger stop             # stop logging
  *   GeoLogger clear            # clear log
  *   GeoLogger isRunning 1      # check GeoLogger status into variables[1] (0 or 1)
@@ -52,6 +53,7 @@
 
 /*:ja
  * @plugindesc 「ジオマネージャー」 モジュールのデモ用プラグイン「ジオロガー」
+ * インターバルタイマーでログ取得します。移動距離を記録して、出力してくれます。
  *
  * @author saronpasu
  *
@@ -80,6 +82,7 @@
  * Plugin Command:
  *   GeoLogger isSupport 1      # ジオロケーションAPIがサポートされているかどうかを変数「１」に返します（０か１）
  *   GeoLogger start            # ジオログ取得開始
+ *   GeoLogger update           # ジオログ手動更新
  *   GeoLogger stop             # ジオログ取得停止
  *   GeoLogger clear            # ジオログ削除
  *   GeoLogger isRunning 1      # ジオログ取得中かどうかを変数「１」に返します（０か１）
@@ -138,6 +141,9 @@ Imported.GeoLogger = {};
                     break;
                 case 'start':
                     geoLogger.start();
+                    break;
+                case 'update':
+                    geoLogger.logging();
                     break;
                 case 'stop':
                     geoLogger.stop();

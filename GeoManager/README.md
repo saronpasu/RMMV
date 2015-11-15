@@ -45,6 +45,8 @@
    - 位置情報の取得に対応しているかどうかを変数「０００１」へ返します。（対応なら１、非対応なら０）
 - GeoLogger start
    - 位置情報の記録を開始します
+- GeoLogger update
+   - 位置情報を手動で更新します
 - GeoLogger stop
    - 位置情報の記録を終了します
 - GeoLogger clear
@@ -194,6 +196,9 @@ Android アプリのビルド方法は、 RPG ツクールMV(RPGMaker MV) の付
 ## History
 version 0.0.1
 - 基本動作ができました。 Android 版とブラウザ版のみ対応。iOS は開発環境がないため未対応です。
+
+version 0.0.2
+- 位置情報の手動更新を追加。 Android 実機での動作確認を完了。
 
 ## Author
 saronpasu
