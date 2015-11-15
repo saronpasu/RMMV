@@ -79,6 +79,8 @@
    - 位置情報の記録を開始します。
 - Imported.GeoLogger.stop()
    - 位置情報の記録を終了します。
+- Imported.GeoLogger.update()
+   - 位置情報の記録を手動で更新します。
 - Imported.GeoLogger.clear()
    - 位置情報の記録を削除します。
 - Imported.GeoLogger.getCurrent()
