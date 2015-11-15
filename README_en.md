@@ -35,7 +35,9 @@ not categorized.
 - [HasAnyItems](/HasAnyItems/)
    - All items and member equips search. has any items return true or false.
 - [HasAllItems](/HasAnyItems/)
-  - All items and member equips search. has all items return true or false.
+   - All items and member equips search. has all items return true or false.
+- [GeoManager](/GeoManager/)
+   - GeoLocation API wrapper plugin, and Demo plugin.
 
 ## License
 MIT
