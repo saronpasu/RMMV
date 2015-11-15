@@ -32,6 +32,10 @@ not categorized.
    - Shared Variables Controller "Chikuwa".
 - [InputRecorder.js](/InputRecorder/)
    - Recording User's keybord, mouse, and other input. and automatic game play from record.
+- [HasAnyItems](/HasAnyItems/)
+   - All items and member equips search. has any items return true or false.
+- [HasAllItems](/HasAnyItems/)
+  - All items and member equips search. has all items return true or false.
 
 ## License
 MIT
