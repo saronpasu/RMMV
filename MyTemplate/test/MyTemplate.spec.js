@@ -31,7 +31,7 @@ describe('MyTemplate', function() {
             });
 
             it('invalid argments', function() {
-                gameInterpreter.pluginCommand('isAnyItemHave', ['invalidArguments']);
+                gameInterpreter.pluginCommand('CommandName', ['invalidArguments']);
             });
 
         });
