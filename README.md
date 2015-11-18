@@ -38,6 +38,8 @@ RPGMakerMV(RPGツクールMV)のプラグイン置き場（仮）です。
    - 「すべてのアイテムを持っているかどうかを確認する」プラグイン。全所持品を検索して名前一致で返す。
 - [GeoManager](/GeoManager/)
    - 「位置情報を取得したりする」プラグイン。主にスマホ向け。
+- [EasterEgg](/EasterEgg/)
+   - 「隠しコマンド（裏ワザ）」プラグイン。
 
 ## Author
 saronpasu

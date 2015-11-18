@@ -38,6 +38,8 @@ not categorized.
    - All items and member equips search. has all items return true or false.
 - [GeoManager](/GeoManager/)
    - GeoLocation API wrapper plugin, and Demo plugin.
+- [EasterEgg](/EasterEgg/)
+   - Secret Comamnd plugin.
 
 ## License
 MIT
