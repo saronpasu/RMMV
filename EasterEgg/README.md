@@ -58,13 +58,14 @@
 ### 動作確認
 
 1) 次の内容でコモンイベントを登録して下さい
-- Trigger: Parallel Switch: 0001
-- Play SE: Sound1 (90, 100, 0   )
-- Control Switches: #0001 = OFF
+ - Trigger: Parallel Switch: 0001
+   - Play SE: Sound1 (90, 100, 0   )
+   - Control Switches: #0001 = OFF
+   - Plugin Command: EasterEgg off
 
 2) 次の内容でイベントを登録して下さい
-- Plugin Command: EasterEgg create 1 up down up down left right
-- Plugin Command: EasterEgg on 1 1 3
+ - Plugin Command: EasterEgg create 1 up down up down left right
+ - Plugin Command: EasterEgg on 1 1 3
 
 3) イベントを実行して、隠しコマンドの入力と入力失敗をそれぞれ確認して下さい。
 
