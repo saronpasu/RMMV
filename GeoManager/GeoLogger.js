@@ -9,7 +9,7 @@
  *
  * @author saronpasu
  *
- * @version 0.0.2
+ * @version 0.0.3
  *
  * @help
  *
@@ -118,6 +118,10 @@ Imported.GeoLogger = {};
 
     'use strict';
 
+    var intervalTimer;
+    var geoLogger;
+    var geoLog;
+
     var parameters = PluginManager.parameters('GeoLogger');
     var Unit = String(parameters['Unit'] || 'm');
     var HighAccuracy = Boolean(parameters['HighAccuracy'] || true);
@@ -131,7 +135,7 @@ Imported.GeoLogger = {};
     var _Game_Interpreter_pluginCommand =
             Game_Interpreter.prototype.pluginCommand;
     Game_Interpreter.prototype.pluginCommand = function(command, args) {
-        _Game_Interpreter_pluginCommand.call(this, command, args);
+        _Game_Interpreter_pluginCommand.apply(this, arguments);
         if (command === 'GeoLogger') {
             switch (args[0]) {
                 case 'isSupport':
@@ -423,32 +427,38 @@ Imported.GeoLogger = {};
     var GeoLog = function() {
     };
 
-    var geoLog;
-    var geoLogger;
-    var intervalTimer;
-
-    var DataManager_createGameObjects = DataManager.createGameObjects;
+    var _DataManager_createGameObjects = DataManager.createGameObjects;
     DataManager.createGameObjects = function() {
-        new DataManager_createGameObjects();
+        _DataManager_createGameObjects();
 
         intervalTimer = new IntervalTimer();
         geoLogger = new GeoLogger();
         geoLog = new GeoLog();
 
+        // エクスポート用のアクセサ
+        var Accessor = {};
+        Accessor.get = geoLogger.getCurrent.bind(geoLogger);
+        Accessor.start = geoLogger.start.bind(geoLogger);
+        Accessor.update = geoLogger.logging.bind(geoLogger);
+        Accessor.stop = geoLogger.stop.bind(geoLogger);
+        Accessor.clear = geoLogger.clear.bind(geoLogger);
+        Accessor.distance = geoLogger.getTotalDistance.bind(geoLogger);
 
+        // エクスポート
+        Imported.GeoLogger = Accessor;
     };
 
-    var DataManager_makeSaveContents = DataManager.makeSaveContents;
+    var _DataManager_makeSaveContents = DataManager.makeSaveContents;
     DataManager.makeSaveContents = function() {
-        var contents = new DataManager_makeSaveContents();
+        var contents = _DataManager_makeSaveContents();
 
         contents.geoLog = geoLog;
         return contents;
     };
 
-    var DataManager_extractSaveContents = DataManager.extractSaveContents;
+    var _DataManager_extractSaveContents = DataManager.extractSaveContents;
     DataManager.extractSaveContents = function(contents) {
-        new DataManager_extractSaveContents(contents);
+        _DataManager_extractSaveContents(contents);
 
         geoLog = contents.geoLog;
     };
@@ -461,18 +471,5 @@ Imported.GeoLogger = {};
 
         Scene_Base_update.call(this);
     };
-
-    // エクスポート用のアクセサ
-    var Accessor = {};
-    var geologger = new GeoLogger();
-    Accessor.get = geologger.getCurrent.bind(geologger);
-    Accessor.start = geologger.start.bind(geologger);
-    Accessor.update = geologger.logging.bind(geologger);
-    Accessor.stop = geologger.stop.bind(geologger);
-    Accessor.clear = geologger.clear.bind(geologger);
-    Accessor.distance = geologger.getTotalDistance.bind(geologger);
-
-    // エクスポート
-    Imported.GeoLogger = Accessor;
 
 })();
