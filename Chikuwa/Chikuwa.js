@@ -100,9 +100,7 @@ Imported.Chikuwa = {};
                     chikuwa.set(args[0], $gameVariables.value(args[2]));
                     break;
                 case 'delete':
-                    console.log(args);
                     if (/^[0-1]+$/.test(args[0])) {
-                        console.log(args[0]);
                         chikuwa.set(args[0], 0);
                     } else if (args[0] === 'all') {
                         chikuwa.delete();
@@ -259,4 +257,3 @@ Imported.Chikuwa = {};
     };
 
 })();
-
