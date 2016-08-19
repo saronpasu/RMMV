@@ -9,7 +9,7 @@
  *
  * @author saronpasu
  *
- * @version 0.1.0
+ * @version 0.2.0
  *
  * @param IR_HKey_StartRecord
  * @desc Start Record HotKey
@@ -34,6 +34,14 @@
  * @param IR_HKey_DeleteRecord
  * @desc Delete Record HotKey(not worn on recording/play recording)
  * @default G
+ *
+ * @param IR_HKey_ExportRecord
+ * @desc Export Record HotKey(not worn on recording/play recording)
+ * @default N
+ *
+ * @param IR_HKey_ImportRecord
+ * @desc Import Record HotKey(not worn on recording/play recording)
+ * @default H
  *
  * @param IR_HKey_StartPlayRecord
  * @desc Start Play Record HotKey
@@ -63,6 +71,10 @@
  * @desc Visible InputRecord's control
  * @default true
  *
+ * @param IR_PlayRecordVisible
+ * @desc Visible InputRecord's Play Record
+ * @default false
+ *
  * @help
  *
  * --- control Keys(Default) ---
@@ -73,6 +85,8 @@
  *   Stop   Record: shift + E (on recording)
  *   Abort  Record: shift + T (on recording)
  *   Delete Record: shift + G
+ *   Export Record: shift + N
+ *   Import Record: shift + H
  *
  * == Play Record control ==
  *   Start  Play Record: shift + V
@@ -117,7 +131,7 @@
  *
  * @author saronpasu
  *
- * @version 0.!.0
+ * @version 0.2.0
  *
  * @param IR_HKey_StartRecord
  * @desc 記録開始を制御するホットキーです。
@@ -142,6 +156,14 @@
  * @param IR_HKey_DeleteRecord
  * @desc 記録の削除を制御するホットキーです。(記録中/再生中には動作しません)
  * @default G
+ *
+ * @param IR_HKey_ExportRecord
+ * @desc 記録のエクスポートを制御するホットキーです。(記録中/再生中には動作しません)
+ * @default N
+ *
+ * @param IR_HKey_ImportRecord
+ * @desc 記録のインポートを制御するホットキーです。(記録中/再生中には動作しません)
+ * @default H
  *
  * @param IR_HKey_StartPlayRecord
  * @desc 記録の再生を制御するホットキーです。
@@ -171,6 +193,10 @@
  * @desc 制御ボタンの表示設定です。
  * @default true
  *
+ * @param IR_ControlVisible
+ * @desc レコード再生内容の表示設定です。
+ * @default false
+ *
  * @help
  *
  * --- ホットキー(デフォルトの場合) ---
@@ -181,6 +207,8 @@
  *   記録を終了する: shift + E (記録中のみ有効)
  *   記録を中止する: shift + T (記録中のみ有効)
  *   記録を削除する: shift + G (記録中/再生中は動作しません)
+ *   記録をエクスポートする: shift + N (記録中/再生中は動作しません)
+ *   記録をインポートする: shift + H (記録中/再生中は動作しません)
  *
  * == 記録再生のコントロール方法 ==
  *   記録再生を開始する: shift + V
@@ -236,6 +264,8 @@
     var IR_HKey_StopAndSaveRecord = String(parameters['IR HKey Stop and Save Record'] || 'E');
     var IR_HKey_AbortRecord = String(parameters['IR HKey Abort Record'] || 'T');
     var IR_HKey_DeleteRecord = String(parameters['IR HKey Delete Record'] || 'G');
+    var IR_HKey_ExportRecord = String(parameters['IR HKey Export Record'] || 'N');
+    var IR_HKey_ImportRecord = String(parameters['IR HKey Import Record'] || 'H');
 
     var IR_HKey_StartPlayRecord = String(parameters['IR HKey Start Play Record'] || 'V');
     var IR_HKey_PausePlayRecord = String(parameters['IR HKey Pause Play Record'] || 'Q');
@@ -246,13 +276,17 @@
     var IR_HKey_SwitchVisibleControl = String(parameters['IR HKey Switch Visible Control'] || 'R');
 
     var IR_ControlVisible = Boolean(parameters['IR Control Visible'] || true);
+    var IR_PlayRecordVisible = Boolean(parameters['IR Play Record Visible'] || false);
+
+    var inputRecorder;
+    var inputRecord;
+    var multiTimer;
 
     var Multi_Timer = function () {
         this.initialize.apply(this, arguments);
     };
 
-    var VirtualEvent = function() {
-    };
+    var VirtualEvent = {};
 
     VirtualEvent.createEvent = function(src) {
         var event = new Event(src.type);
@@ -302,29 +336,31 @@
 
     Multi_Timer.prototype.onExpire = function() {
         // console.log('Multi Timer on Expire');
-        var currentRecord = $input_record.getRecord();
+        var currentRecord = inputRecord.getRecord();
         if (currentRecord) {
-            if($input_record.nextQueue()) {
-                this.setQueue($input_record.nextQueue());
+            if(inputRecord.nextQueue()) {
+                this.setQueue(inputRecord.nextQueue());
             }
             var virtualEvent = VirtualEvent.createEvent(currentRecord.event);
             // console.log('VirtualEvent execute');
             document.dispatchEvent(virtualEvent);
-        } else if (InputRecorder.isRepeatPlayRecord()) {
+        } else if (inputRecorder.isRepeatPlayRecord()) {
             console.log(' === InputRecorder Repeat Play Record === ');
-            $multi_timer = new Multi_Timer();
-            $input_record = new InputRecord();
-            $input_record.load();
-            if ($input_record._record.length === 0) {
+            multiTimer = new Multi_Timer();
+            inputRecord.clear();
+            if (inputRecord._record.length === 0) {
                 console.log(' non record. ');
                 console.log(' === InputRecorder Abort Play Record === ');
+                inputRecord.clear();
+                inputRecorder._onPlayRecord = false;
                 return false;
             }
-            $multi_timer.start($input_record.nextQueue());
+            multiTimer.start(inputRecord.nextQueue());
             this._onPlayRecord = true;
         } else {
             console.log(' === InputRecorder End Play Record === ');
-            InputRecorder._onPlayRecord = false;
+            inputRecord.clear();
+            inputRecorder._onPlayRecord = false;
             this._working = false;
             this._frames = 0;
             this._queue = null;
@@ -332,7 +368,16 @@
     };
 
     var InputRecord = function() {
+        this.initialize.apply(this, arguments);
+    };
+
+    InputRecord.prototype.initialize = function() {
         this._record = [];
+        this.clear();
+    };
+
+    InputRecord.prototype.clear = function() {
+        this._tempRecord = this._record.slice();
     };
 
     InputRecord.prototype.applyData = function(data) {
@@ -340,84 +385,93 @@
     };
 
     InputRecord.prototype.addRecord = function(data) {
-        this._record.push(data);
+        this._tempRecord.push(data);
     };
 
     InputRecord.prototype.nextQueue = function() {
-        if (this._record.length != 0) {
-            return this._record[0].frame;
+        if (this._tempRecord.length !== 0) {
+            return this._tempRecord[0].frame;
         }
     };
 
     InputRecord.prototype.getRecord = function() {
-        return this._record.shift();
-    };
-
-    InputRecord.prototype.delete = function() {
-        StorageManager.remove(-2);
-        this._record = [];
-    };
-
-    InputRecord.prototype.load = function() {
-        var json;
-        var config = {};
-        try {
-            json = StorageManager.load(-2);
-        } catch (e) {
-            console.error(e);
-        }
-        if (json) {
-            data = JSON.parse(json);
-        }
-        this.applyData(data);
-    };
-
-    InputRecord.prototype.makeData = function() {
-        return this._record;
+        return this._tempRecord.shift();
     };
 
     InputRecord.prototype.save = function() {
-        StorageManager.save(-2, JSON.stringify(this.makeData()));
+        this._record = this._tempRecord.slice();
     };
 
-    InputRecordPlayer = function() {
+    InputRecord.prototype.delete = function() {
+        this._record = [];
     };
 
-    InputRecorder = function() {
-         this._onRecord = false;
-         this._onPauseRecord = false;
-         this._onPlay = false;
-         this._onPausePlay = false;
-         this._onRepeatPlay = false;
-         this.F = true;
-         this._tempRecord = new InputRecord();
+    InputRecord.prototype.makeExportData = function() {
+        return JSON.stringify(this._record);
     };
 
-    InputRecorder.isRecord = function() {
+    InputRecord.prototype.importData = function(data) {
+        this._record = JSON.parse(data);
+    };
+
+    InputRecord.prototype.lastFrame = function() {
+        var record = this._record.slice(-1)
+        return record[0].frame;
+    };
+
+    InputRecord.prototype.nextRecord = function() {
+        if (this._tempRecord.length !== 0) {
+            return this._tempRecord[0];
+        } else {
+            return false;
+        }
+    };
+
+    var InputRecorder = function() {
+        this.initialize.apply(this, arguments);
+    };
+
+    InputRecorder.prototype.clear = function() {
+        this._onRecord = false;
+        this._onPauseRecord = false;
+        this._onPlayRecord = false;
+        this._onPausePlay = false;
+        this._onRepeatPlay = false;
+
+        this._currentKey = null;
+        this._prevKey = null;
+        this._pressedTime = 0;
+    };
+
+    InputRecorder.prototype.isRecord = function() {
         return this._onRecord;
     };
 
-    InputRecorder.isPauseRecord = function() {
+    InputRecorder.prototype.isPauseRecord = function() {
         return this._onPauseRecord;
     };
 
-    InputRecorder.isPlayRecord = function() {
+    InputRecorder.prototype.isPlayRecord = function() {
         return this._onPlayRecord;
     };
 
-    InputRecorder.isPausePlayRecord = function() {
+    InputRecorder.prototype.isPausePlayRecord = function() {
         return this._onPausePlayRecord;
     };
 
-    InputRecorder.isRepeatPlayRecord = function() {
+    InputRecorder.prototype.isRepeatPlayRecord = function() {
         return this._onRepeatPlayRecord;
     };
 
-    InputRecorder.isControlVisible = function() {
+    InputRecorder.prototype.isControlVisible = function() {
         return this._controlVisible;
     };
 
-    InputRecorder.status = function() {
+    InputRecorder.prototype.isPlayRecordVisible = function() {
+        return this._playRecordVisible;
+    };
+
+    InputRecorder.prototype.status = function() {
         var statusTerms_en = {
             recording: 'Recording',
             pause_record: 'Pause Record',
@@ -442,18 +496,18 @@
         } catch (e) {
         }
 
-        if (InputRecorder.isRecord() && !InputRecorder.isPauseRecord() && !InputRecorder.isPlayRecord()) {
+        if (this.isRecord() && !this.isPauseRecord() && !this.isPlayRecord()) {
             return statusTerms['recording'];
-        } else if (InputRecorder.isRecord() && InputRecorder.isPauseRecord() && !InputRecorder.isPlayRecord()) {
+        } else if (this.isRecord() && this.isPauseRecord() && !this.isPlayRecord()) {
             return statusTerms['pause_record'];
-        } else if (InputRecorder.isPlayRecord() && !InputRecorder.isPausePlayRecord() && !InputRecorder.isRecord()) {
-            if (InputRecorder.isRepeatPlayRecord()) {
+        } else if (this.isPlayRecord() && !this.isPausePlayRecord() && !this.isRecord()) {
+            if (this.isRepeatPlayRecord()) {
                 return statusTerms['repeat'] + statusTerms['play_record'];
             } else {
                 return statusTerms['play_record'];
             }
-        } else if (InputRecorder.isPlayRecord() && InputRecorder.isPausePlayRecord() && !InputRecorder.isRecord()) {
-            if (InputRecorder.isRepeatPlayRecord()) {
+        } else if (this.isPlayRecord() && this.isPausePlayRecord() && !this.isRecord()) {
+            if (this.isRepeatPlayRecord()) {
                 return statusTerms['repeat'] + statusTerms['pause_play_record'];
             } else {
                 return statusTerms['pause_play_record'];
@@ -463,7 +517,7 @@
         };
     };
 
-    InputRecorder.recordControlText = function() {
+    InputRecorder.prototype.recordControlText = function() {
         var recordControlTerms_en = {
             start_record: 'Start Record',
             stop_record: 'Stop Record'
@@ -480,16 +534,16 @@
         } catch (e) {
         }
 
-        if (!InputRecorder.isRecord() && !InputRecorder.isPlayRecord()) {
+        if (!this.isRecord() && !this.isPlayRecord()) {
             return recordControlTerms['start_record'];
-        } else if (InputRecorder.isRecord() && !InputRecorder.isPlayRecord()) {
+        } else if (this.isRecord() && !this.isPlayRecord()) {
             return recordControlTerms['stop_record'];
         } else {
             return false;
         }
     };
 
-    InputRecorder.playRecordControlText = function() {
+    InputRecorder.prototype.playRecordControlText = function() {
         var playRecordControlTerms_en = {
             start_play_record: 'Start Play Record',
             stop_play_record: 'Stop Play Record'
@@ -506,16 +560,16 @@
         } catch (e) {
         }
 
-        if (!InputRecorder.isRecord() && !InputRecorder.isPlayRecord() && InputRecorder.hasRecord()) {
+        if (!this.isRecord() && !this.isPlayRecord() && this.hasRecord()) {
             return playRecordControlTerms['start_play_record'];
-        } else if (InputRecorder.isPlayRecord() && !InputRecorder.isRecord()) {
+        } else if (this.isPlayRecord() && !this.isRecord()) {
             return playRecordControlTerms['stop_play_record'];
         } else {
             return false;
         }
     };
 
-    InputRecorder.pauseControlText = function() {
+    InputRecorder.prototype.pauseControlText = function() {
         var pauseControlTerms_en = {
             pause: 'Pause',
             resume: 'Resume'
@@ -532,10 +586,10 @@
         } catch (e) {
         }
 
-        if (!InputRecorder.isRecord() && !InputRecorder.isPlayRecord()) {
+        if (!this.isRecord() && !this.isPlayRecord()) {
             return false;
-        } else if ((InputRecorder.isRecord() || InputRecorder.isPlayRecord()) &&
-            (InputRecorder.isPauseRecord() || InputRecorder.isPausePlayRecord())
+        } else if ((this.isRecord() || this.isPlayRecord()) &&
+            (this.isPauseRecord() || this.isPausePlayRecord())
         ) {
             return pauseControlTerms['resume'];
         } else {
@@ -543,7 +597,7 @@
         }
     };
 
-    InputRecorder.abortControlText = function() {
+    InputRecorder.prototype.abortControlText = function() {
         var abortControlTerms_en = {
             abort: 'Abort'
         };
@@ -558,14 +612,14 @@
         } catch (e) {
         }
 
-        if (InputRecorder.isRecord() || InputRecorder.isPlayRecord()) {
+        if (this.isRecord() || this.isPlayRecord()) {
             return abortControlTerms['abort'];
         } else {
             return false;
         }
     };
 
-    InputRecorder.repeatControlText = function() {
+    InputRecorder.prototype.repeatControlText = function() {
         var repeatControlTerms_en = {
             repeat_on: 'Repeat ON',
             repeat_off: 'Repeat OFF'
@@ -582,16 +636,16 @@
         } catch (e) {
         }
 
-        if (!InputRecorder.isRepeatPlayRecord() && InputRecorder.isPlayRecord()) {
+        if (!this.isRepeatPlayRecord() && this.isPlayRecord()) {
             return repeatControlTerms['repeat_on'];
-        } else if (InputRecorder.isRepeatPlayRecord() && InputRecorder.isPlayRecord()) {
+        } else if (this.isRepeatPlayRecord() && this.isPlayRecord()) {
             return repeatControlTerms['repeat_off'];
         } else {
             return false;
         }
     };
 
-    InputRecorder.deleteRecordControlText = function() {
+    InputRecorder.prototype.deleteRecordControlText = function() {
         var deleteRecordControlTerms_en = {
             delete_record: 'Delete Record'
         };
@@ -606,47 +660,163 @@
         } catch (e) {
         }
 
-        if (!InputRecorder.isRecord() && !InputRecorder.isPlayRecord() && InputRecorder.hasRecord()) {
+        if (!this.isRecord() && !this.isPlayRecord() && this.hasRecord()) {
             return deleteRecordControlTerms['delete_record'];
         } else {
             return false;
         }
     };
 
-    InputRecorder.startRecord = function() {
+    // TODO: TAS like display
+    InputRecorder.prototype.frameCounter = function() {
+        var frameCounterTerms_en = {
+            header: '',
+            sep: '/',
+            footer: ' frames'
+        };
+        var frameCounterTerms_ja = {
+            header: '',
+            sep: '/',
+            footer: ' frames'
+        };
+        var frameCounterTerms = frameCounterTerms_en;
+        try {
+            if ($gameSystem.isJapanese()) {
+                frameCounterTerms = frameCounterTerms_ja;
+            }
+        } catch (e) {
+        }
+
+        if (this.isPlayRecordVisible() && this.isPlayRecord()) {
+            return frameCounterTerms['header'] +
+                multiTimer.now() +
+                frameCounterTerms['sep'] +
+                inputRecord.lastFrame() +
+                frameCounterTerms['footer'];
+        } else {
+            return false;
+        }
+    };
+
+    InputRecorder.prototype.recordView = function() {
+        var recordViewTerms_en = {
+            header: 'Next: ',
+            sep: '/',
+            frames: ' frames',
+            label: 'label: ',
+            keyCode: 'keyCode: ',
+            altKey: '& Alt ',
+            ctrlKey: '& Ctrl ',
+            shiftKey: '& Shift ',
+            metaKey: '& Meta ',
+            pageX: 'pageX: ',
+            pageY: 'pageY: ',
+            wheelX: 'wheelX: ',
+            wheelY: 'wheelY: ',
+            deltaX: 'deltaX: ',
+            deltaY: 'deltaY: ',
+            button: 'button: '
+        };
+        var recordViewTerms_ja = {
+            header: '',
+            sep: '/',
+            frames: ' frames',
+            label: 'label: ',
+            keyCode: 'keyCode: ',
+            altKey: '& Alt ',
+            ctrlKey: '& Ctrl ',
+            shiftKey: '& Shift ',
+            metaKey: '& Meta ',
+            pageX: 'pageX: ',
+            pageY: 'pageY: ',
+            wheelX: 'wheelX: ',
+            wheelY: 'wheelY: ',
+            deltaX: 'deltaX: ',
+            deltaY: 'deltaY: ',
+            button: 'button: '
+        };
+        var recordViewTerms = recordViewTerms_en;
+        try {
+            if ($gameSystem.isJapanese()) {
+                recordViewTerms = recordViewTerms_ja;
+            }
+        } catch (e) {
+        }
+
+        if (this.isPlayRecordVisible() && this.isPlayRecord() && inputRecord.nextRecord()) {
+            var record = inputRecord.nextRecord();
+            var event = record.event;
+            var result = [recordViewTerms['header'] +
+                record.frame +
+                recordViewTerms['sep'] +
+                inputRecord.lastFrame() +
+                recordViewTerms['frames']];
+            result.push(recordViewTerms['label'] + record.label);
+            var temp = recordViewTerms['keyCode'];
+            temp += event.which ? event.which : '---';
+            temp += ' ';
+            temp += event.shiftKey ? recordViewTerms['shiftKey'] : '';
+            temp += event.ctrlKey ? recordViewTerms['ctrlKey'] : '';
+            temp += event.altKey ? recordViewTerms['altKey'] : '';
+            temp += event.metaKey ? recordViewTerms['metaKey'] : '';
+            result.push(temp.slice());
+            temp = recordViewTerms['button'];
+            temp += event.button ? event.button : '---';
+            result.push(temp.slice());
+            temp = recordViewTerms['pageX'];
+            temp += event.pageX ? event.pageX : '---';
+            temp += ' ' + recordViewTerms['pageY'];
+            temp += event.pageY ? event.pageY : '---';
+            result.push(temp.slice());
+            temp = ' ' + recordViewTerms['wheelX'];
+            temp += event.wheelX ? event.wheelX : '---';
+            temp += ' ' + recordViewTerms['wheelY'];
+            temp += event.wheelY ? event.wheelY : '---';
+            temp += ' ' + recordViewTerms['deltaX'];
+            temp += event.deltaX ? event.deltaX : '---';
+            temp += ' ' + recordViewTerms['deltaY'];
+            temp += event.deltaY ? event.deltaY : '---';
+            result.push(temp.slice());
+            return result;
+        } else {
+            return false;
+        }
+    };
+
+    InputRecorder.prototype.startRecord = function() {
         console.log('in Start Record');
         var date = new Date;
         var sec = date.getSeconds();
-        if (InputRecorder.isPlayRecord() && InputRecorder.isRecord()) {
+        if (this.isPlayRecord() && this.isRecord()) {
             return false;
-        } else if (!InputRecorder.isRecord() && !InputRecorder.isPlayRecord() && this._stop_time != sec) {
+        } else if (!this.isRecord() && !this.isPlayRecord() && this._stop_time != sec) {
             console.log(' === InputRecorder Start Record === ');
-            $multi_timer.start();
+            multiTimer.start();
             $input_record = new InputRecord();
             this._onRecord = true;
         }
     };
 
-    InputRecorder.pauseRecord = function() {
+    InputRecorder.prototype.pauseRecord = function() {
         console.log('in Pause Record');
         var date = new Date;
         var sec = date.getSeconds();
-        if (!InputRecorder.isRecord() || InputRecorder.isPauseRecord() || InputRecorder.isPlayRecord()) {
+        if (!this.isRecord() || this.isPauseRecord() || this.isPlayRecord()) {
             return false;
-        } else if (InputRecorder.isRecord() && !InputRecorder.isPauseRecord() && this._resume_time != sec) {
+        } else if (this.isRecord() && !this.isPauseRecord() && this._resume_time != sec) {
             console.log(' === InputRecorder Pause Record === ');
-            $multi_timer._working = false;
+            multiTimer._working = false;
             this._onPauseRecord = true;
         }
     };
 
-    InputRecorder.resumeRecord = function() {
+    InputRecorder.prototype.resumeRecord = function() {
         console.log('in Resume Record');
-        if (!InputRecorder.isRecord() || !InputRecorder.isPauseRecord() || InputRecorder.isPlayRecord()) {
+        if (!this.isRecord() || !this.isPauseRecord() || this.isPlayRecord()) {
             return false;
-        } else if (InputRecorder.isRecord() && InputRecorder.isPauseRecord()) {
+        } else if (this.isRecord() && this.isPauseRecord()) {
             console.log(' === InputRecorder Resume Record === ');
-            $multi_timer._working = true;
+            multiTimer._working = true;
             this._onPauseRecord = false;
             var date = new Date;
             var sec = date.getSeconds();
@@ -654,15 +824,15 @@
         }
     };
 
-    InputRecorder.stopAndSaveRecord = function() {
+    InputRecorder.prototype.stopAndSaveRecord = function() {
         console.log('in Stop and Save Record');
-        if (!InputRecorder.isRecord() || InputRecorder.isPlayRecord()) {
+        if (!this.isRecord() || this.isPlayRecord()) {
             return false;
-        } else if (InputRecorder.isRecord() && !InputRecorder.isPlayRecord()) {
+        } else if (this.isRecord() && !this.isPlayRecord()) {
             console.log(' === InputRecorder Stop And Save Record === ');
-            $input_record.save();
-            $multi_timer = new Multi_Timer();
-            $input_record = new InputRecord();
+            multiTimer = new Multi_Timer();
+            inputRecord.save();
+            inputRecord.clear();
             this._onRecord = false;
             this._onPauseRecord = false;
             var date = new Date;
@@ -671,75 +841,131 @@
         }
     };
 
-    InputRecorder.abortRecord = function() {
+    InputRecorder.prototype.abortRecord = function() {
         console.log('in Abort Record');
-        if (!InputRecorder.isRecord() || InputRecorder.isPlayRecord()) {
+        if (!this.isRecord() || this.isPlayRecord()) {
             return false;
-        } else if (InputRecorder.isRecord() && !InputRecorder.isPlayRecord()) {
+        } else if (this.isRecord() && !this.isPlayRecord()) {
             console.log(' === InputRecorder Abort Record === ');
-            $multi_timer = new Multi_Timer();
-            $input_record = new InputRecord();
+            multiTimer = new Multi_Timer();
+            inputRecord.clear();
             this._onRecord = false;
             this._onPauseRecord = false;
         }
     };
 
-    InputRecorder.hasRecord = function() {
-        return StorageManager.exists(-2);
+    InputRecorder.prototype.hasRecord = function() {
+        return inputRecord._record.length !== 0;
     };
 
-    InputRecorder.deleteRecord = function() {
+    InputRecorder.prototype.deleteRecord = function() {
         console.log('in Delete Record');
-        if (InputRecorder.isRecord() || InputRecorder.isPlayRecord() || !InputRecorder.hasRecord()) {
+        if (this.isRecord() || this.isPlayRecord() || !this.hasRecord()) {
             return false;
-        } else if (!InputRecorder.isRecord() && !InputRecorder.isPlayRecord() && InputRecorder.hasRecord()) {
+        } else if (!this.isRecord() && !this.isPlayRecord() && this.hasRecord()) {
             console.log(' === InputRecorder Delete Record === ');
-            $input_record = new InputRecord();
-            $input_record.delete();
+            inputRecord = new InputRecord();
+            inputRecord.delete();
         }
     };
 
+    InputRecorder.prototype.fileChooce = function(event) {
+        var file = event.target.files[0];
+        if (file) {
+            var reader = new FileReader();
+            reader.readAsText(file);
+            reader.onload = function() {
+                inputRecord.importData(reader.result);
+            };
+        }
+    };
 
-    InputRecorder.startPlayRecord = function() {
-        console.log('in Start Play Record');
-        if (InputRecorder.isRecord() || !InputRecorder.hasRecord() || InputRecorder.isPlayRecord()) {
+    InputRecorder.prototype.importRecord = function() {
+        console.log('in Import Record');
+        if (this.isRecord() || this.isPlayRecord()) {
             return false;
-        } else if (!InputRecorder.isRecord() && !InputRecorder.isPlayRecord() && InputRecorder.hasRecord()) {
+        } else if (!this.isRecord() && !this.isPlayRecord()) {
+            console.log(' === InputRecorder Import Record === ');
+            if (Utils.isNwjs()) {
+                var dirPath = StorageManager.localFileDirectoryPath()+'../InputRecorder/';
+                var fileName = 'record.json';
+                var fs = require('fs');
+                if (!fs.existsSync(dirPath+fileName)) {
+                    return;
+                }
+                var data = fs.readFileSync(dirPath+fileName, 'utf-8');
+                inputRecord.importData(data);
+            } else {
+                var fileInput = document.getElementById('InputRecorder_FileInput');
+                fileInput.addEventListener('change', this.fileChooce, false);
+                fileInput.click();
+            }
+        }
+    };
+
+    InputRecorder.prototype.exportRecord = function() {
+        if (this.isRecord() || this.isPlayRecord() || !this.hasRecord()) {
+            return false;
+        } else if (!this.isRecord() && !this.isPlayRecord() && this.hasRecord()) {
+            console.log(' === InputRecorder Export Record === ');
+            var data = inputRecord.makeExportData();
+            if (Utils.isNwjs()) {
+                // TODO: coding now
+                var dirPath = StorageManager.localFileDirectoryPath()+'../InputRecorder/';
+                var fileName = 'record.json';
+                var fs = require('fs');
+                if (!fs.existsSync(dirPath)) {
+                    fs.mkdirSync(dirPath);
+                }
+                fs.writeFileSync(dirPath+fileName, data);
+            } else {
+                var a = document.createElement('a');
+                a.download = 'record.json';
+                a.href = URL.createObjectURL(new Blob([data], {type: 'application/json'}));
+                a.click();
+            }
+        }
+    };
+
+    InputRecorder.prototype.startPlayRecord = function() {
+        console.log('in Start Play Record');
+        if (this.isRecord() || !this.hasRecord() || this.isPlayRecord()) {
+            return false;
+        } else if (!this.isRecord() && !this.isPlayRecord() && this.hasRecord()) {
             console.log(' === InputRecorder Start Play Record === ');
-            $multi_timer = new Multi_Timer();
-            $input_record = new InputRecord();
-            $input_record.load();
-            if ($input_record._record.length === 0) {
+            inputRecord.clear();
+            multiTimer = new Multi_Timer();
+            if (inputRecord._record.length === 0) {
                 console.log(' non record. ');
                 console.log(' === InputRecorder Abort Play Record === ');
                 return false;
             }
-            $multi_timer.start($input_record.nextQueue());
+            multiTimer.start(inputRecord.nextQueue());
             this._onPlayRecord = true;
             this._onRepeatPlayRecord = false;
         }
     };
 
-    InputRecorder.pausePlayRecord = function() {
+    InputRecorder.prototype.pausePlayRecord = function() {
         console.log('in Pause Play Record');
         var date = new Date;
         var sec = date.getSeconds();
-        if (!InputRecorder.isPlayRecord() || InputRecorder.isPausePlayRecord()) {
+        if (!this.isPlayRecord() || this.isPausePlayRecord()) {
             return false;
-        } else if (InputRecorder.isPlayRecord() && !InputRecorder.isPausePlayRecord() && !InputRecorder.isRecord() && this._resume_time != sec) {
+        } else if (this.isPlayRecord() && !this.isPausePlayRecord() && !this.isRecord() && this._resume_time != sec) {
             console.log(' === InputRecorder Pause Play Record === ');
-            $multi_timer._working = false;
+            multiTimer._working = false;
             this._onPausePlayRecord = true;
         }
     };
 
-    InputRecorder.resumePlayRecord = function() {
+    InputRecorder.prototype.resumePlayRecord = function() {
         console.log('in Resume Play Record');
-        if (!InputRecorder.isPlayRecord() || !InputRecorder.isPausePlayRecord()) {
+        if (!this.isPlayRecord() || !this.isPausePlayRecord()) {
             return false;
-        } else if (InputRecorder.isPlayRecord() && InputRecorder.isPausePlayRecord() && !InputRecorder.isRecord()) {
+        } else if (this.isPlayRecord() && this.isPausePlayRecord() && !this.isRecord()) {
             console.log(' === InputRecorder Resume Play Record === ');
-            $multi_timer._working = true;
+            multiTimer._working = true;
             this._onPausePlayRecord = false;
             var date = new Date;
             var sec = date.getSeconds();
@@ -747,33 +973,33 @@
         }
     };
 
-    InputRecorder.switchRepeatPlayRecord = function() {
+    InputRecorder.prototype.switchRepeatPlayRecord = function() {
         console.log('in Repeat Play Record');
-        if (!InputRecorder.isPlayRecord() || InputRecorder.isRecord()) {
+        if (!this.isPlayRecord() || this.isRecord()) {
             return false;
-        } else if (InputRecorder.isPlayRecord() && !InputRecorder.isRecord()) {
+        } else if (this.isPlayRecord() && !this.isRecord()) {
             console.log(' === InputRecorder Switch Repeat Play Record === ');
             this._onRepeatPlayRecord = !this._onRepeatPlayRecord;
         }
     };
 
-    InputRecorder.abortPlayRecord = function() {
+    InputRecorder.prototype.abortPlayRecord = function() {
         console.log('in Abort Play Record');
-        if (!InputRecorder.isPlayRecord() || InputRecorder.isRecord()) {
+        if (!this.isPlayRecord() || this.isRecord()) {
             return false;
-        } else if (InputRecorder.isPlayRecord() && !InputRecorder.isRecord()) {
+        } else if (this.isPlayRecord() && !this.isRecord()) {
             console.log(' === InputRecorder Abort Play Record === ');
-            $multi_timer = new Multi_Timer();
-            $input_record = new InputRecord();
+            inputRecord.clear();
+            multiTimer = new Multi_Timer();
             this._onPlayRecord = false;
             this._onPausePlayRecord = false;
             this._onRepeatPlayRecord = false;
         }
     };
 
-    InputRecorder.switchVisibleControl = function() {
+    InputRecorder.prototype.switchVisibleControl = function() {
         console.log('in Switch Visible Control');
-        if (!InputRecorder.isPlayRecord || Utils.isMobileDevice()) {
+        if (!this.isPlayRecord || Utils.isMobileDevice()) {
             return false;
         } else {
             console.log(' === InputRecorder Switch Visible Control === ');
@@ -781,7 +1007,7 @@
         }
     };
 
-    InputRecorder.isValidHKey = function(param) {
+    InputRecorder.prototype.isValidHKey = function(param) {
           var validations = [
               // check type.
               function(target) {
@@ -818,7 +1044,7 @@
           return result.length === 0
     };
 
-    InputRecorder.isValidControlVisible = function(param) {
+    InputRecorder.prototype.isValidControlVisible = function(param) {
           if (typeof param === 'boolean') {
               return true;
           } else {
@@ -827,7 +1053,7 @@
           }
     };
 
-    InputRecorder.checkPluginParameters = function() {
+    InputRecorder.prototype.checkPluginParameters = function() {
          var HKeyParams = [
              IR_HKey_StartRecord,
              IR_HKey_PauseRecord,
@@ -835,6 +1061,8 @@
              IR_HKey_StopAndSaveRecord,
              IR_HKey_AbortRecord,
              IR_HKey_DeleteRecord,
+             IR_HKey_ExportRecord,
+             IR_HKey_ImportRecord,
 
              IR_HKey_StartPlayRecord,
              IR_HKey_PausePlayRecord,
@@ -845,8 +1073,9 @@
              IR_HKey_SwitchVisibleControl
          ];
          var result = [];
-         result.concat(HKeyParams.filter(InputRecorder.isValidHKey));
-         result.concat(InputRecorder.isValidControlVisible(IR_ControlVisible));
+         result.concat(HKeyParams.filter(this.isValidHKey));
+         result.concat(this.isValidControlVisible(IR_ControlVisible));
+         result.concat(this.isValidControlVisible(IR_PlayRecordVisible));
          return result.length === 0;
     };
 
@@ -860,80 +1089,92 @@
         'Y': 89, 'Z': 90
     };
 
-    InputRecorder.setHotKeys = function() {
+    InputRecorder.prototype.setHotKeys = function() {
         var HotKeys = {};
         var MultiKeys = {};
 
-/* for debug 
+/* for debug
         console.log(' === IR HotKeys === ');
         console.log(
-            'IR HotKey Start Record: Key[ ' + 
+            'IR HotKey Start Record: Key[ ' +
             IR_HKey_StartRecord + ' ] ' +
             'KeyCode [ ' +
             InputRecorder.keyMapper[IR_HKey_StartRecord].toString() + ' ] '
         );
         console.log(
-            'IR HotKey Pause Record: Key[ ' + 
+            'IR HotKey Pause Record: Key[ ' +
             IR_HKey_PauseRecord + ' ] ' +
             'KeyCode [ ' +
             InputRecorder.keyMapper[IR_HKey_PauseRecord].toString() + ' ] '
         );
         console.log(
-            'IR HotKey Resume Record: Key[ ' + 
+            'IR HotKey Resume Record: Key[ ' +
             IR_HKey_ResumeRecord + ' ] ' +
             'KeyCode [ ' +
             InputRecorder.keyMapper[IR_HKey_ResumeRecord].toString() + ' ] '
         );
         console.log(
-            'IR HotKey Stop and Save Record: Key[ ' + 
+            'IR HotKey Stop and Save Record: Key[ ' +
             IR_HKey_StopAndSaveRecord + ' ] ' +
             'KeyCode [ ' +
             InputRecorder.keyMapper[IR_HKey_StopAndSaveRecord].toString() + ' ] '
         );
         console.log(
-            'IR HotKey Abort Record: Key[ ' + 
+            'IR HotKey Abort Record: Key[ ' +
             IR_HKey_AbortRecord + ' ] ' +
             'KeyCode [ ' +
             InputRecorder.keyMapper[IR_HKey_AbortRecord].toString() + ' ] '
         );
         console.log(
-            'IR HotKey Delete Record: Key[ ' + 
+            'IR HotKey Delete Record: Key[ ' +
             IR_HKey_DeleteRecord + ' ] ' +
             'KeyCode [ ' +
             InputRecorder.keyMapper[IR_HKey_DeleteRecord].toString() + ' ] '
         );
         console.log(
-            'IR HotKey Start Play Record: Key[ ' + 
+            'IR HotKey Export Record: Key[ ' +
+            IR_HKey_ExportRecord + ' ] ' +
+            'KeyCode [ ' +
+            InputRecorder.keyMapper[IR_HKey_ExportRecord].toString() + ' ] '
+        );
+        console.log(
+            'IR HotKey Import Record: Key[ ' +
+            IR_HKey_ImportRecord + ' ] ' +
+            'KeyCode [ ' +
+            InputRecorder.keyMapper[IR_HKey_ImportRecord].toString() + ' ] '
+        );
+        console.log(
+            'IR HotKey Start Play Record: Key[ ' +
             IR_HKey_StartPlayRecord + ' ] ' +
             'KeyCode [ ' +
             InputRecorder.keyMapper[IR_HKey_StartPlayRecord].toString() + ' ] '
         );
         console.log(
-            'IR HotKey Pause Play Record: Key[ ' + 
+            'IR HotKey Pause Play Record: Key[ ' +
             IR_HKey_PausePlayRecord + ' ] ' +
             'KeyCode [ ' +
             InputRecorder.keyMapper[IR_HKey_PausePlayRecord].toString() + ' ] '
         );
         console.log(
-            'IR HotKey Resume Play Record: Key[ ' + 
+            'IR HotKey Resume Play Record: Key[ ' +
             IR_HKey_ResumePlayRecord + ' ] ' +
             'KeyCode [ ' +
             InputRecorder.keyMapper[IR_HKey_ResumePlayRecord].toString() + ' ] '
         );
         console.log(
-            'IR HotKey Repeat Play Record: Key[ ' + 
+            'IR HotKey Repeat Play Record: Key[ ' +
             IR_HKey_RepeatPlayRecord + ' ] ' +
             'KeyCode [ ' +
             InputRecorder.keyMapper[IR_HKey_RepeatPlayRecord].toString() + ' ] '
         );
         console.log(
-            'IR HotKey Abort Play Record: Key[ ' + 
+            'IR HotKey Abort Play Record: Key[ ' +
             IR_HKey_AbortPlayRecord + ' ] ' +
             'KeyCode [ ' +
             InputRecorder.keyMapper[IR_HKey_AbortPlayRecord].toString() + ' ] '
         );
         console.log(
-            'IR HotKey Switch Visible Control: Key[ ' + 
+            'IR HotKey Switch Visible Control: Key[ ' +
             IR_HKey_SwitchVisibleControl + ' ] ' +
             'KeyCode [ ' +
             InputRecorder.keyMapper[IR_HKey_SwitchVisibleControl].toString() + ' ] '
@@ -949,45 +1190,49 @@
             }
         };
 
-        setKey(InputRecorder.keyMapper[IR_HKey_StopAndSaveRecord], function() {InputRecorder.stopAndSaveRecord()});
-        setKey(InputRecorder.keyMapper[IR_HKey_ResumeRecord], function() {InputRecorder.resumeRecord()});
-        setKey(InputRecorder.keyMapper[IR_HKey_PauseRecord], function() {InputRecorder.pauseRecord()});
-        setKey(InputRecorder.keyMapper[IR_HKey_StartRecord], function() {InputRecorder.startRecord()});
-        setKey(InputRecorder.keyMapper[IR_HKey_AbortRecord], function() {InputRecorder.abortRecord()});
-        setKey(InputRecorder.keyMapper[IR_HKey_DeleteRecord], function() {InputRecorder.deleteRecord()});
+        setKey(InputRecorder.keyMapper[IR_HKey_StopAndSaveRecord], this.stopAndSaveRecord.bind(this));
+        setKey(InputRecorder.keyMapper[IR_HKey_ResumeRecord], this.resumeRecord.bind(this));
+        setKey(InputRecorder.keyMapper[IR_HKey_PauseRecord], this.pauseRecord.bind(this));
+        setKey(InputRecorder.keyMapper[IR_HKey_StartRecord], this.startRecord.bind(this));
+        setKey(InputRecorder.keyMapper[IR_HKey_AbortRecord], this.abortRecord.bind(this));
+        setKey(InputRecorder.keyMapper[IR_HKey_DeleteRecord], this.deleteRecord.bind(this));
+        setKey(InputRecorder.keyMapper[IR_HKey_ExportRecord], this.exportRecord.bind(this));
+        setKey(InputRecorder.keyMapper[IR_HKey_ImportRecord], this.importRecord.bind(this));
 
-        setKey(InputRecorder.keyMapper[IR_HKey_StartPlayRecord], function() {InputRecorder.startPlayRecord()});
-        setKey(InputRecorder.keyMapper[IR_HKey_ResumePlayRecord], function() {InputRecorder.resumePlayRecord()});
-        setKey(InputRecorder.keyMapper[IR_HKey_PausePlayRecord], function() {InputRecorder.pausePlayRecord()});
-        setKey(InputRecorder.keyMapper[IR_HKey_RepeatPlayRecord], function() {InputRecorder.switchRepeatPlayRecord()});
-        setKey(InputRecorder.keyMapper[IR_HKey_AbortPlayRecord], function() {InputRecorder.abortPlayRecord()});
+        setKey(InputRecorder.keyMapper[IR_HKey_StartPlayRecord], this.startPlayRecord.bind(this));
+        setKey(InputRecorder.keyMapper[IR_HKey_ResumePlayRecord], this.resumePlayRecord.bind(this));
+        setKey(InputRecorder.keyMapper[IR_HKey_PausePlayRecord], this.pausePlayRecord.bind(this));
+        setKey(InputRecorder.keyMapper[IR_HKey_RepeatPlayRecord], this.switchRepeatPlayRecord.bind(this));
+        setKey(InputRecorder.keyMapper[IR_HKey_AbortPlayRecord], this.abortPlayRecord.bind(this));
 
-        setKey(InputRecorder.keyMapper[IR_HKey_SwitchVisibleControl], function() {InputRecorder.switchVisibleControl()});
+        setKey(InputRecorder.keyMapper[IR_HKey_SwitchVisibleControl], this.switchVisibleControl.bind(this));
 
         this.hotKeys = HotKeys;
 
     };
 
-    InputRecorder.setup = function() {
-         if (!InputRecorder.checkPluginParameters()) {
-             return false;
-         };
-         InputRecorder.setHotKeys();
+    InputRecorder.prototype.setup = function() {
+        this.clear();
+        if (!this.checkPluginParameters()) {
+            return false;
+        };
+        this.setHotKeys();
 
-         if (Utils.isMobileDevice()) {
-             InputRecorder._controlVisible = true;
-         } else {
-             InputRecorder._controlVisible = IR_ControlVisible;
-         }
-         
-         $input_record = new InputRecord();
-         $multi_timer = new Multi_Timer();
-         
-         this._resume_time = 0;
-         this._stop_time = 0;
+        if (Utils.isMobileDevice()) {
+            this._controlVisible = true;
+        } else {
+            this._controlVisible = IR_ControlVisible;
+        }
+        this._playRecordVisible = IR_PlayRecordVisible;
+
+        inputRecord = new InputRecord();
+        multiTimer = new Multi_Timer();
+
+        this._resume_time = 0;
+        this._stop_time = 0;
     };
 
-    InputRecorder._wrapNwjsAlert = function() {
+    InputRecorder.prototype._wrapNwjsAlert = function() {
         if (Utils.isNwjs()) {
             var _alert = window.alert;
             window.alert = function() {
@@ -1000,23 +1245,31 @@
         }
     };
 
-    InputRecorder._setupEventHandlers = function() {
+    InputRecorder.prototype.setupEventHandlers = function() {
         document.addEventListener('keydown', this._onKeyDown.bind(this));
         document.addEventListener('keyup', this._onKeyUp.bind(this));
     };
 
-    InputRecorder.initialize = function() {
+    InputRecorder.prototype.setupFileInput = function() {
+        var fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = 'application/json';
+        fileInput.style.display = 'none';
+        fileInput.id = 'InputRecorder_FileInput';
+        document.body.appendChild(fileInput);
+    };
+
+    InputRecorder.prototype.initialize = function() {
         this.setup();
 
         this._wrapNwjsAlert();
-        this._setupEventHandlers();
     };
 
-    InputRecorder._shouldPreventDefault = function(which) {
+    InputRecorder.prototype._shouldPreventDefault = function(which) {
         return false;
     };
 
-    InputRecorder._onKeyDown = function(event) {
+    InputRecorder.prototype._onKeyDown = function(event) {
         if (this._shouldPreventDefault(event.which)) {
             event.preventDefault();
         }
@@ -1025,40 +1278,45 @@
             return;
         }
         if (event.shiftKey && event.which != 16) {
-            var buttonName = this.hotKeys[event.which];
+            var buttons = this.hotKeys[event.which];
         }
 
-        if (buttonName) {
-           for(i=0;i<buttonName.length;i++) {
-               buttonName[i]();
-           }
+        if (buttons) {
+            this._currentKey = event.which;
+            if (this._prevKey === this._currentKey) {
+                this._pressedTime++;
+            } else {
+                for(i=0;i<buttons.length;i++) {
+                    buttons[i]();
+                }
+            }
+            this._prevKey = this._prevKey || event.which;
         }
-        
 
-
-        if (!buttonName && InputRecorder.isRecord() && !InputRecorder.isPauseRecord() &&
-            !InputRecorder.isPlayRecord() && !InputRecorder.isPausePlayRecord()) {
+        if (!buttons && this.isRecord() && !this.isPauseRecord() &&
+            !this.isPlayRecord() && !this.isPausePlayRecord()) {
 
             var eventSource = {};
             eventSource.type = 'keydown';
             eventSource.keyCode = event.keyCode;
             eventSource.altKey = event.altKey;
             eventSource.ctrlKey = event.ctrlKey;
+            eventSource.shiftKey = event.shiftKey;
             eventSource.metaKey = event.metaKey;
             eventSource.which = event.which;
             eventSource.bubbles = event.bubbles;
             eventSource.cancelable = event.cancelable;
 
-            $input_record.addRecord({
+            inputRecord.addRecord({
                 label: 'KeybordEvent keydown',
-                frame: $multi_timer.now(),
+                frame: multiTimer.now(),
                 event: eventSource
             });
 
         }
     };
 
-    InputRecorder._onKeyUp = function(event) {
+    InputRecorder.prototype._onKeyUp = function(event) {
         if (event.shiftKey && event.which != 16) {
             var buttonName = this.hotKeys[event.which];
         }
@@ -1067,22 +1325,33 @@
             return;
         }
 
-        if (!buttonName && InputRecorder.isRecord() && !InputRecorder.isPauseRecord() &&
-            !InputRecorder.isPlayRecord() && !InputRecorder.isPausePlayRecord()) {
+        if (event.shiftKey && event.which != 16) {
+            var buttons = this.hotKeys[event.which];
+        }
+
+        if (buttons) {
+            this._currentKey = null;
+            this._prevKey = null;
+            this._pressedTime = 0;
+        }
+
+        if (!buttonName && this.isRecord() && !this.isPauseRecord() &&
+            !this.isPlayRecord() && !this.isPausePlayRecord()) {
 
             var eventSource = {};
             eventSource.type = 'keyup';
             eventSource.keyCode = event.keyCode;
             eventSource.altKey = event.altKey;
             eventSource.ctrlKey = event.ctrlKey;
+            eventSource.shiftKey = event.shiftKey;
             eventSource.metaKey = event.metaKey;
             eventSource.which = event.which;
             eventSource.bubbles = event.bubbles;
             eventSource.cancelable = event.cancelable;
 
-            $input_record.addRecord({
+            inputRecord.addRecord({
                 label: 'KeybordEvent keyup',
-                frame: $multi_timer.now(),
+                frame: multiTimer.now(),
                 event: eventSource
             });
 
@@ -1093,10 +1362,9 @@
     };
 
     TouchInputRecorder.initialize = function() {
-        this._setupEventHandlers();
     };
 
-    TouchInputRecorder._setupEventHandlers = function() {
+    TouchInputRecorder.setupEventHandlers = function() {
         document.addEventListener('mousedown', this._onMouseDown.bind(this));
         document.addEventListener('mousemove', this._onMouseMove.bind(this));
         document.addEventListener('mouseup', this._onMouseUp.bind(this));
@@ -1110,8 +1378,8 @@
 
     TouchInputRecorder._onMouseDown = function(event) {
 
-        if (InputRecorder.isRecord() && !InputRecorder.isPauseRecord() &&
-            !InputRecorder.isPlayRecord() && !InputRecorder.isPausePlayRecord()) {
+        if (inputRecorder.isRecord() && !inputRecorder.isPauseRecord() &&
+            !inputRecorder.isPlayRecord() && !inputRecorder.isPausePlayRecord()) {
 
             var eventSource = {};
             eventSource.type = 'mousedown';
@@ -1121,9 +1389,9 @@
             eventSource.bubbles = event.bubbles;
             eventSource.cancelable = event.cancelable;
 
-            $input_record.addRecord({
+            inputRecord.addRecord({
                 label: 'MouseEvent mousedown',
-                frame: $multi_timer.now(),
+                frame: multiTimer.now(),
                 event: eventSource
             });
 
@@ -1133,8 +1401,8 @@
 
     TouchInputRecorder._onMouseMove = function(event) {
 
-        if (InputRecorder.isRecord() && !InputRecorder.isPauseRecord() &&
-            !InputRecorder.isPlayRecord() && !InputRecorder.isPausePlayRecord()) {
+        if (inputRecorder.isRecord() && !inputRecorder.isPauseRecord() &&
+            !inputRecorder.isPlayRecord() && !inputRecorder.isPausePlayRecord()) {
 
             var eventSource = {};
             eventSource.type = 'mousemove';
@@ -1144,20 +1412,18 @@
             eventSource.bubbles = event.bubbles;
             eventSource.cancelable = event.cancelable;
 
-            $input_record.addRecord({
+            inputRecord.addRecord({
                 label: 'MouseEvent mousemove',
-                frame: $multi_timer.now(),
+                frame: multiTimer.now(),
                 event: eventSource
             });
-
         }
-
     };
 
     TouchInputRecorder._onMouseUp = function(event) {
 
-        if (InputRecorder.isRecord() && !InputRecorder.isPauseRecord() &&
-            !InputRecorder.isPlayRecord() && !InputRecorder.isPausePlayRecord()) {
+        if (inputRecorder.isRecord() && !inputRecorder.isPauseRecord() &&
+            !inputRecorder.isPlayRecord() && !inputRecorder.isPausePlayRecord()) {
 
             var eventSource = {};
             eventSource.type = 'mouseup';
@@ -1167,20 +1433,18 @@
             eventSource.bubbles = event.bubbles;
             eventSource.cancelable = event.cancelable;
 
-            $input_record.addRecord({
+            inputRecord.addRecord({
                 label: 'MouseEvent mouseup',
-                frame: $multi_timer.now(),
+                frame: multiTimer.now(),
                 event: eventSource
             });
-
         }
-
     };
-    
+
     TouchInputRecorder._onWheel = function(event) {
 
-        if (InputRecorder.isRecord() && !InputRecorder.isPauseRecord() &&
-            !InputRecorder.isPlayRecord() && !InputRecorder.isPausePlayRecord()) {
+        if (inputRecorder.isRecord() && !inputRecorder.isPauseRecord() &&
+            !inputRecorder.isPlayRecord() && !inputRecorder.isPausePlayRecord()) {
 
             var eventSource = {};
             eventSource.type = 'wheel';
@@ -1191,20 +1455,18 @@
             eventSource.bubbles = event.bubbles;
             eventSource.cancelable = event.cancelable;
 
-            $input_record.addRecord({
+            inputRecord.addRecord({
                 label: 'MouseEvent wheel',
-                frame: $multi_timer.now(),
+                frame: multiTimer.now(),
                 event: eventSource
             });
-
         }
-
     };
 
     TouchInputRecorder._onTouchStart = function(event) {
 
-        if (InputRecorder.isRecord() && !InputRecorder.isPauseRecord() &&
-            !InputRecorder.isPlayRecord() && !InputRecorder.isPausePlayRecord()) {
+        if (inputRecorder.isRecord() && !inputRecorder.isPauseRecord() &&
+            !inputRecorder.isPlayRecord() && !inputRecorder.isPausePlayRecord()) {
 
             var eventSource = {};
             eventSource.type = 'touchstart';
@@ -1235,20 +1497,18 @@
             }
             eventSource.touches = touches;
 
-            $input_record.addRecord({
+            inputRecord.addRecord({
                 label: 'TouchEvent tohchstart',
-                frame: $multi_timer.now(),
+                frame: multiTimer.now(),
                 event: eventSource
             });
-
         }
-
     };
 
     TouchInputRecorder._onTouchMove = function(event) {
 
-        if (InputRecorder.isRecord() && !InputRecorder.isPauseRecord() &&
-            !InputRecorder.isPlayRecord() && !InputRecorder.isPausePlayRecord()) {
+        if (inputRecorder.isRecord() && !inputRecorder.isPauseRecord() &&
+            !inputRecorder.isPlayRecord() && !inputRecorder.isPausePlayRecord()) {
 
             var eventSource = {};
             eventSource.type = 'touchmove';
@@ -1279,20 +1539,18 @@
             }
             eventSource.touches = touches;
 
-            $input_record.addRecord({
+            inputRecord.addRecord({
                 label: 'TouchEvent tohchmove',
-                frame: $multi_timer.now(),
+                frame: multiTimer.now(),
                 event: eventSource
             });
-
         }
-
     };
 
     TouchInputRecorder._onTouchEnd = function(event) {
 
-        if (InputRecorder.isRecord() && !InputRecorder.isPauseRecord() &&
-            !InputRecorder.isPlayRecord() && !InputRecorder.isPausePlayRecord()) {
+        if (inputRecorder.isRecord() && !inputRecorder.isPauseRecord() &&
+            !inputRecorder.isPlayRecord() && !inputRecorder.isPausePlayRecord()) {
 
             var virtualEvent = new Event('touchend');
             var eventSource = {};
@@ -1324,20 +1582,18 @@
             }
             eventSource.touches = touches;
 
-            $input_record.addRecord({
+            inputRecord.addRecord({
                 label: 'TouchEvent tohchend',
-                frame: $multi_timer.now(),
+                frame: multiTimer.now(),
                 event: virtualEvent
             });
-
         }
-
     };
 
     TouchInputRecorder._onTouchCancel = function(event) {
 
-        if (InputRecorder.isRecord() && !InputRecorder.isPauseRecord() &&
-            !InputRecorder.isPlayRecord() && !InputRecorder.isPausePlayRecord()) {
+        if (inputRecorder.isRecord() && !inputRecorder.isPauseRecord() &&
+            !inputRecorder.isPlayRecord() && !inputRecorder.isPausePlayRecord()) {
 
             var eventSource = {};
             eventSource.type = 'touchcancel';
@@ -1368,20 +1624,18 @@
             }
             eventSource.touches = touches;
 
-            $input_record.addRecord({
+            inputRecord.addRecord({
                 label: 'TouchEvent tohchcancel',
-                frame: $multi_timer.now(),
+                frame: multiTimer.now(),
                 event: eventSource
             });
-
         }
-
     };
 
     TouchInputRecorder._onPointerDown = function(event) {
 
-        if (InputRecorder.isRecord() && !InputRecorder.isPauseRecord() &&
-            !InputRecorder.isPlayRecord() && !InputRecorder.isPausePlayRecord()) {
+        if (inputRecorder.isRecord() && !inputRecorder.isPauseRecord() &&
+            !inputRecorder.isPlayRecord() && !inputRecorder.isPausePlayRecord()) {
 
             if (event.pointerType === 'touch' && !event.isPrimary) {
                 var virtualEvent = new Event(event.type);
@@ -1392,74 +1646,55 @@
                 eventSource.bubbles = event.bubbles;
                 evnetSource.cancelable = event.cancelable;
 
-                $input_record.addRecord({
+                inputRecord.addRecord({
                     label: 'VirtualEvent '+event.type,
-                    frame: $multi_timer.now(),
+                    frame: multiTimer.now(),
                     event: eventSource
                 });
             }
-
         }
-
     };
 
-//-----------------------------------------------------------------------------
-// SceneManager
-//
-// OverRide from rpg_scenes.js SceneManager class.
-
+    var _SceneManager_initInput = SceneManager.initInput;
     SceneManager.initInput = function() {
-        Input.initialize();
-        TouchInput.initialize();
+        _SceneManager_initInput();
 
-        InputRecorder.initialize();
-        TouchInputRecorder.initialize();
+        inputRecorder = new InputRecorder();
+        inputRecord = new InputRecord();
+
+        // Accessor for Export.
+        var Accessor = {};
+        // TODO: write it.
+        // Export.
+        // Imported.InputRecorder = Accessor;
+
+        inputRecorder.setupEventHandlers();
+        inputRecorder.setupFileInput();
+        TouchInputRecorder.setupEventHandlers();
     };
 
-//-----------------------------------------------------------------------------
-// Scene_Base
-//
-// OverRide from rpg_sprites.js Scene_Base class.
-
+    var _Scene_Base_update = Scene_Base.prototype.update;
     Scene_Base.prototype.update = function() {
-        this.updateFade();
-        this.updateChildren();
-        AudioManager.checkErrors();
+        _Scene_Base_update.call(this);
 
-        if ($multi_timer && $multi_timer.isWorking) {
-            $multi_timer.update();
+        if (multiTimer && multiTimer.isWorking) {
+            multiTimer.update();
         }
     };
 
-//-----------------------------------------------------------------------------
-// StorageManager
-//
-// OverRide from rpg_managers.js StorageManager class.
+    var _DataManager_makeSaveContents = DataManager.makeSaveContents;
+    DataManager.makeSaveContents = function() {
+        var contents = _DataManager_makeSaveContents();
 
-    StorageManager.localFilePath = function(savefileId) {
-        var name;
-        if (savefileId < 0 && savefileId === -1) {
-            name = 'config.rpgsave';
-        } else if (savefileId < 0 && savefileId === -2) {
-            name = 'inputrecord.rpgsave';
-        } else if (savefileId === 0) {
-            name = 'global.rpgsave';
-        } else {
-            name = 'file%1.rpgsave'.format(savefileId);
-        }
-        return this.localFileDirectoryPath() + name;
+        contents.inputRecord = inputRecord;
+        return contents;
     };
 
-    StorageManager.webStorageKey = function(savefileId) {
-        if (savefileId < 0 && savefileId === -1) {
-            return 'RPG Config';
-        } else if (savefileId < 0 && savefileId === -2) {
-            return 'RPG Input Record';
-        } else if (savefileId === 0) {
-            return 'RPG Global';
-        } else {
-            return 'RPG File%1'.format(savefileId);
-        }
+    var _DataManager_extractSaveContents = DataManager.extractSaveContents;
+    DataManager.extractSaveContents = function(contents) {
+        _DataManager_extractSaveContents(contents);
+
+        inputRecord = contents.inputRecord;
     };
 
     var Sprite_InputRecorderStatus = function() {
@@ -1500,7 +1735,7 @@
     };
 
     Sprite_InputRecorderStatus.prototype.statusText = function() {
-        return InputRecorder.status();
+        return inputRecorder.status();
     };
 
     Sprite_InputRecorderStatus.prototype.updatePosition = function() {
@@ -1509,7 +1744,7 @@
     };
 
     Sprite_InputRecorderStatus.prototype.updateVisibility = function() {
-        this.visible = InputRecorder.isControlVisible();
+        this.visible = inputRecorder.isControlVisible();
     };
 
     var Sprite_InputRecorderRecordControlButton = function() {
@@ -1550,17 +1785,17 @@
 
         if (this.isActive() && TouchInput.isTriggered() && this.isButtonTouched()) {
 
-            if (InputRecorder.isRecord()) {
-                InputRecorder.stopAndSaveRecord();
+            if (inputRecorder.isRecord()) {
+                inputRecorder.stopAndSaveRecord();
             } else {
-                InputRecorder.startRecord();
+                inputRecorder.startRecord();
             }
 
         }
     };
 
     Sprite_InputRecorderRecordControlButton.prototype.recordControlText = function() {
-        return InputRecorder.recordControlText();
+        return inputRecorder.recordControlText();
     };
 
     Sprite_InputRecorderRecordControlButton.prototype.updatePosition = function() {
@@ -1569,7 +1804,7 @@
     };
 
     Sprite_InputRecorderRecordControlButton.prototype.updateVisibility = function() {
-        if (InputRecorder.isControlVisible() && !!this.recordControlText()) {
+        if (inputRecorder.isControlVisible() && !!this.recordControlText()) {
             this.visible = true;
         } else {
             this.visible = false;
@@ -1614,17 +1849,17 @@
 
         if (this.isActive() && TouchInput.isTriggered() && this.isButtonTouched()) {
 
-            if (InputRecorder.isPlayRecord()) {
-                InputRecorder.abortPlayRecord();
+            if (inputRecorder.isPlayRecord()) {
+                inputRecorder.abortPlayRecord();
             } else {
-                InputRecorder.startPlayRecord();
+                inputRecorder.startPlayRecord();
             }
 
         }
     };
 
     Sprite_InputRecorderPlayRecordControlButton.prototype.playRecordControlText = function() {
-        return InputRecorder.playRecordControlText();
+        return inputRecorder.playRecordControlText();
     };
 
     Sprite_InputRecorderPlayRecordControlButton.prototype.updatePosition = function() {
@@ -1633,7 +1868,7 @@
     };
 
     Sprite_InputRecorderPlayRecordControlButton.prototype.updateVisibility = function() {
-        if (InputRecorder.isControlVisible() && !!this.playRecordControlText()) {
+        if (inputRecorder.isControlVisible() && !!this.playRecordControlText()) {
             this.visible = true;
         } else {
             this.visible = false;
@@ -1678,21 +1913,21 @@
 
         if (this.isActive() && TouchInput.isTriggered() && this.isButtonTouched()) {
 
-            if (InputRecorder.isRecord() && !InputRecorder.isPauseRecord()) {
-                InputRecorder.pauseRecord();
-            } else if (InputRecorder.isRecord() && InputRecorder.isPauseRecord()) {
-                InputRecorder.resumeRecord();
-            } else if (InputRecorder.isPlayRecord() && !InputRecorder.isPausePlayRecord()) {
-                InputRecorder.pausePlayRecord();
-            } else if (InputRecorder.isPlayRecord() && InputRecorder.isPausePlayRecord()) {
-                InputRecorder.resumePlayRecord();
+            if (inputRecorder.isRecord() && !inputRecorder.isPauseRecord()) {
+                inputRecorder.pauseRecord();
+            } else if (inputRecorder.isRecord() && inputRecorder.isPauseRecord()) {
+                inputRecorder.resumeRecord();
+            } else if (inputRecorder.isPlayRecord() && !inputRecorder.isPausePlayRecord()) {
+                inputRecorder.pausePlayRecord();
+            } else if (inputRecorder.isPlayRecord() && inputRecorder.isPausePlayRecord()) {
+                inputRecorder.resumePlayRecord();
             }
 
         }
     };
 
     Sprite_InputRecorderPauseControlButton.prototype.pauseControlText = function() {
-        return InputRecorder.pauseControlText();
+        return inputRecorder.pauseControlText();
     };
 
     Sprite_InputRecorderPauseControlButton.prototype.updatePosition = function() {
@@ -1701,7 +1936,7 @@
     };
 
     Sprite_InputRecorderPauseControlButton.prototype.updateVisibility = function() {
-        if (InputRecorder.isControlVisible() && !!this.pauseControlText()) {
+        if (inputRecorder.isControlVisible() && !!this.pauseControlText()) {
             this.visible = true;
         } else {
             this.visible = false;
@@ -1746,17 +1981,17 @@
 
         if (this.isActive() && TouchInput.isTriggered() && this.isButtonTouched()) {
 
-            if (InputRecorder.isRecord()) {
-                InputRecorder.abortRecord();
-            } else if (InputRecorder.isPlayRecord()) {
-                InputRecorder.abortPlayRecord();
+            if (inputRecorder.isRecord()) {
+                inputRecorder.abortRecord();
+            } else if (inputRecorder.isPlayRecord()) {
+                inputRecorder.abortPlayRecord();
             }
 
         }
     };
 
     Sprite_InputRecorderAbortControlButton.prototype.abortControlText = function() {
-        return InputRecorder.abortControlText();
+        return inputRecorder.abortControlText();
     };
 
     Sprite_InputRecorderAbortControlButton.prototype.updatePosition = function() {
@@ -1765,7 +2000,7 @@
     };
 
     Sprite_InputRecorderAbortControlButton.prototype.updateVisibility = function() {
-        if (InputRecorder.isControlVisible() && !!this.abortControlText()) {
+        if (inputRecorder.isControlVisible() && !!this.abortControlText()) {
             this.visible = true;
         } else {
             this.visible = false;
@@ -1810,15 +2045,15 @@
 
         if (this.isActive() && TouchInput.isTriggered() && this.isButtonTouched()) {
 
-            if (InputRecorder.isPlayRecord()) {
-                InputRecorder.switchRepeatPlayRecord();
+            if (inputRecorder.isPlayRecord()) {
+                inputRecorder.switchRepeatPlayRecord();
             }
 
         }
     };
 
     Sprite_InputRecorderRepeatControlButton.prototype.repeatControlText = function() {
-        return InputRecorder.repeatControlText();
+        return inputRecorder.repeatControlText();
     };
 
     Sprite_InputRecorderRepeatControlButton.prototype.updatePosition = function() {
@@ -1827,7 +2062,7 @@
     };
 
     Sprite_InputRecorderRepeatControlButton.prototype.updateVisibility = function() {
-        if (InputRecorder.isControlVisible() && !!this.repeatControlText()) {
+        if (inputRecorder.isControlVisible() && !!this.repeatControlText()) {
             this.visible = true;
         } else {
             this.visible = false;
@@ -1872,15 +2107,15 @@
 
         if (this.isActive() && TouchInput.isTriggered() && this.isButtonTouched()) {
 
-            if (InputRecorder.hasRecord() && !InputRecorder.isRecord() && !InputRecorder.isPlayRecord()) {
-                InputRecorder.deleteRecord();
+            if (inputRecorder.hasRecord() && !inputRecorder.isRecord() && !inputRecorder.isPlayRecord()) {
+                inputRecorder.deleteRecord();
             }
 
         }
     };
 
     Sprite_InputRecorderDeleteRecordControlButton.prototype.deleteRecordControlText = function() {
-        return InputRecorder.deleteRecordControlText();
+        return inputRecorder.deleteRecordControlText();
     };
 
     Sprite_InputRecorderDeleteRecordControlButton.prototype.updatePosition = function() {
@@ -1889,17 +2124,12 @@
     };
 
     Sprite_InputRecorderDeleteRecordControlButton.prototype.updateVisibility = function() {
-        if (InputRecorder.isControlVisible() && !!this.deleteRecordControlText()) {
+        if (inputRecorder.isControlVisible() && !!this.deleteRecordControlText()) {
             this.visible = true;
         } else {
             this.visible = false;
         }
     };
-
-//-----------------------------------------------------------------------------
-// Spriteset_Base
-//
-// OverRide from rpg_sprites.js Spriteset_Base class.
 
     Spriteset_Base.prototype.createInputRecorderStatus = function() {
         this._inputRecorderSpriteStatus = new Sprite_InputRecorderStatus();
@@ -1936,10 +2166,131 @@
         this.addChild(this._inputRecorderSpriteDeleteRecordControlButton);
     };
 
+    // TODO: TAS like display
+    var Sprite_InputRecorderFrameCounter = function() {
+        this.initialize.apply(this, arguments);
+    };
+
+    Sprite_InputRecorderFrameCounter.prototype = Object.create(Sprite.prototype);
+    Sprite_InputRecorderFrameCounter.prototype.constructor = Sprite_InputRecorderFrameCounter;
+
+    Sprite_InputRecorderFrameCounter.prototype.initialize = function() {
+        Sprite.prototype.initialize.call(this);
+        this.createBitmap();
+        this.update();
+    };
+
+    Sprite_InputRecorderFrameCounter.prototype.createBitmap = function() {
+        this.bitmap = new Bitmap(420, 32);
+        this.bitmap.fontSize = 24;
+    };
+
+    Sprite_InputRecorderFrameCounter.prototype.update = function() {
+        Sprite.prototype.update.call(this);
+        this.updateBitmap();
+        this.updatePosition();
+        this.updateVisibility();
+    };
+
+    Sprite_InputRecorderFrameCounter.prototype.updateBitmap = function() {
+        this.redraw();
+    };
+
+    Sprite_InputRecorderFrameCounter.prototype.redraw = function() {
+        var frameCounter = this.frameCounter();
+        var width = this.bitmap.width;
+        var height = this.bitmap.height;
+        this.bitmap.clear();
+        this.bitmap.drawText(frameCounter, 0, 0, width, height, 'right');
+    };
+
+    Sprite_InputRecorderFrameCounter.prototype.frameCounter = function() {
+        return inputRecorder.frameCounter();
+    };
+
+    Sprite_InputRecorderFrameCounter.prototype.updatePosition = function() {
+        this.x = Graphics.width - this.bitmap.width;
+        this.y = 224;
+    };
+
+    Sprite_InputRecorderFrameCounter.prototype.updateVisibility = function() {
+        if (inputRecorder.isControlVisible() && !!this.frameCounter()) {
+            this.visible = true;
+        } else {
+            this.visible = false;
+        }
+    };
+
+    var Sprite_InputRecorderRecordView = function() {
+        this.initialize.apply(this, arguments);
+    };
+
+    Sprite_InputRecorderRecordView.prototype = Object.create(Sprite.prototype);
+    Sprite_InputRecorderRecordView.prototype.constructor = Sprite_InputRecorderRecordView;
+
+    Sprite_InputRecorderRecordView.prototype.initialize = function() {
+        Sprite.prototype.initialize.call(this);
+        this.createBitmap();
+        this.update();
+    };
+
+    Sprite_InputRecorderRecordView.prototype.createBitmap = function() {
+        this.bitmap = new Bitmap(420, 192);
+        this.bitmap.fontSize = 24;
+    };
+
+    Sprite_InputRecorderRecordView.prototype.update = function() {
+        Sprite.prototype.update.call(this);
+        this.updateBitmap();
+        this.updatePosition();
+        this.updateVisibility();
+    };
+
+    Sprite_InputRecorderRecordView.prototype.updateBitmap = function() {
+        this.redraw();
+    };
+
+    Sprite_InputRecorderRecordView.prototype.redraw = function() {
+        var recordView = this.recordView();
+        var width = this.bitmap.width;
+        var height = this.bitmap.height;
+        this.bitmap.clear();
+        for(i=0;i<recordView.length;i++) {
+            this.bitmap.drawText(recordView[i], 0, 32 * i, width, 32, 'right');
+        }
+    };
+
+    Sprite_InputRecorderRecordView.prototype.recordView = function() {
+        return inputRecorder.recordView();
+    };
+
+    Sprite_InputRecorderRecordView.prototype.updatePosition = function() {
+        this.x = Graphics.width - this.bitmap.width;
+        this.y = 256;
+    };
+
+    Sprite_InputRecorderRecordView.prototype.updateVisibility = function() {
+        if (inputRecorder.isControlVisible() && !!this.recordView()) {
+            this.visible = true;
+        } else {
+            this.visible = false;
+        }
+    };
+
+
+    Spriteset_Base.prototype.createInputRecorderFrameCounter = function() {
+        this._inputRecorderSpriteFrameCounter = new Sprite_InputRecorderFrameCounter();
+        this.addChild(this._inputRecorderSpriteFrameCounter);
+    };
+
+    Spriteset_Base.prototype.createInputRecorderRecordView = function() {
+        this._inputRecorderSpriteRecordView = new Sprite_InputRecorderRecordView();
+        this.addChild(this._inputRecorderSpriteRecordView);
+    };
+
+    var _Spriteset_Base_createUpperLayer = Spriteset_Base.prototype.createUpperLayer;
     Spriteset_Base.prototype.createUpperLayer = function() {
-        this.createPictures();
-        this.createTimer();
-        this.createScreenSprites();
+        _Spriteset_Base_createUpperLayer.call(this);
 
         this.createInputRecorderStatus();
         this.createInputRecorderRecordControlButton();
@@ -1948,6 +2299,9 @@
         this.createInputRecorderAbortControlButton();
         this.createInputRecorderRepeatControlButton();
         this.createInputRecorderDeleteRecordControlButton();
+
+        this.createInputRecorderFrameCounter();
+        this.createInputRecorderRecordView();
     };
 
 
