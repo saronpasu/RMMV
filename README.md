@@ -40,6 +40,8 @@ RPGMakerMV(RPGツクールMV)のプラグイン置き場（仮）です。
    - 「位置情報を取得したりする」プラグイン。主にスマホ向け。
 - [EasterEgg](/EasterEgg/)
    - 「隠しコマンド（裏ワザ）」プラグイン。
+- [Sazanami](/Sazanami/)
+  - 「騒音計」プラグイン。
 
 ## Author
 saronpasu

@@ -40,6 +40,8 @@ not categorized.
    - GeoLocation API wrapper plugin, and Demo plugin.
 - [EasterEgg](/EasterEgg/)
    - Secret Comamnd plugin.
+- [Sazanami](/Sazanami/)
+  - NoiseMater plugin.
 
 ## License
 MIT
