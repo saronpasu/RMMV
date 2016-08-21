@@ -1,0 +1,31 @@
+[
+    {
+        "id":   1,
+        "name": "ゾンビ化",
+        "description":  "感染すると徐々にゾンビ化します。感染性と潜伏期間があります。",
+        "count":    0,
+        "limit":    70,
+        "level":    0,
+        "maxLevel": 4,
+        "effects":  [
+            {
+                "effect":   null,
+                "expireLevel":  1
+            },
+            {
+                "effect":   4,
+                "expireLevel":  2
+            },
+            {
+                "effect":   6,
+                "expireLevel":  3
+            },
+            {
+                "effect":   3,
+                "expireLevel":  4
+            }
+        ],
+        "progressTriggerId":    1,
+        "curseId":  1
+    }
+]
