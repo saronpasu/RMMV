@@ -2,12 +2,12 @@
 
 ---
 - 使い方
--- 「Yorozu.js」と「Yorozu」フォルダを「plugins」に入れます。
--- プラグインマネージャーで「Yorozu」を登録します。
--- エネミーの名前とかがおかしくなります。
+    - 「Yorozu.js」と「Yorozu」フォルダを「plugins」に入れます。
+    - プラグインマネージャーで「Yorozu」を登録します。
+    - エネミーの名前とかがおかしくなります。
 
 - より詳しい使い方
--- 「Yorozu」フォルダの中にある「prefix.txt」とか「suffix.txt」を書き換えるとおもしろくなります。
+    - 「Yorozu」フォルダの中にある「prefix.txt」とか「suffix.txt」を書き換えるとおもしろくなります。
 
 
 詳しい処理は Yorodu.js を見て下さい。
