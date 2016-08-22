@@ -42,6 +42,8 @@ not categorized.
    - Secret Comamnd plugin.
 - [Sazanami](/Sazanami/)
   - NoiseMater plugin.
+- [Yorozu](/Yorozu/)
+  - Random Name Changer. it's a joke-plugin.
 
 ## License
 MIT
