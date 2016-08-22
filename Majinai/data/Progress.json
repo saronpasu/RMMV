@@ -25,7 +25,7 @@
                 "expireLevel":  4
             }
         ],
-        "progressTriggerId":    1,
+        "progressTriggers":[1],
         "curseId":  1
     }
 ]
