@@ -438,7 +438,7 @@ Imported.Majinai = {};
         this.initialize.apply(this, arguments);
     }
 
-    Trigger.prototype.initialize() = {
+    Trigger.prototype.initialize = function() {
         this.setup();
     };
 
@@ -529,7 +529,14 @@ Imported.Majinai = {};
 
     var _Game_BattlerBase_initMembers = Game_BattlerBase.prototype.initMembers
     Game_BattlerBase.prototype.initMembers = function() {
-        _Game_BattlerBase_initMembers();
+        this._hp = 1;
+        this._mp = 0;
+        this._tp = 0;
+        this._hidden = false;
+        this.clearParamPlus();
+        this.clearStates();
+        this.clearBuffs();
+
         this.crearCurse();
         this.crearAntiCurse();
     };
@@ -684,7 +691,7 @@ Imported.Majinai = {};
         this.makeAntiCurse(curseId);
     };
 
-    Game_BattlerBase.prototype.addNewAntiCurse = funtion(antiCurseId) {
+    Game_BattlerBase.prototype.addNewAntiCurse = function(antiCurseId) {
         var antiCurse = new AntiCurse();
         antiCurse.setup(antiCurseId);
         this._antiCurses.push(antiCurse);
@@ -972,7 +979,11 @@ Imported.Majinai = {};
 
     var _Game_Enemy_setup = Game_Enemy.prototype.setup;
     Game_Enemy.prototype.setup = function(enemyId, x, y) {
-        _Game_Enemy_setup(enemyId, x, y);
+        this._enemyId = enemyId;
+        this._screenX = x;
+        this._screenY = y;
+        this.recoverAll();
+
         // メモ解析
         var source = this.note;
         // antiCurse
@@ -1002,34 +1013,34 @@ Imported.Majinai = {};
                 progress.level = progressLevel;
             }
         }
-    }
+    };
 
     Object.defineProperties(TextManager, {
         // Words
-        antiCurse:              Terms[Language]['words']['AntiCurse'],
-        curse:                  Terms[Language]['words']['Curse'],
-        unkonw:                 Terms[Language]['words']['Unknown'],
-        infection:              Terms[Language]['words']['Infection'],
-        infectionTrigger:       Terms[Language]['words']['InfectionTrigger'],
-        progress:               Terms[Language]['words']['Progress'],
-        progressTrigger:        Terms[Language]['words']['ProgressTrigger'],
-        progressLevel:          Terms[Language]['words']['ProgressLevel'],
-        progressLevel0:         Terms[Language]['words']['ProgressLevel0'],
-        progressLevel1:         Terms[Language]['words']['ProgressLevel1'],
-        progressLevel2:         Terms[Language]['words']['ProgressLevel2'],
-        progressLevel3:         Terms[Language]['words']['ProgressLevel3'],
-        progressLevel4:         Terms[Language]['words']['ProgressLevel4'],
-        effects:                Terms[Language]['words']['Effects'],
-        expire:                 Terms[Language]['words']['Expire'],
+        antiCurse:              Object(Terms[Language]['words']['AntiCurse']),
+        curse:                  Object(Terms[Language]['words']['Curse']),
+        unkonw:                 Object(Terms[Language]['words']['Unknown']),
+        infection:              Object(Terms[Language]['words']['Infection']),
+        infectionTrigger:       Object(Terms[Language]['words']['InfectionTrigger']),
+        progress:               Object(Terms[Language]['words']['Progress']),
+        progressTrigger:        Object(Terms[Language]['words']['ProgressTrigger']),
+        progressLevel:          Object(Terms[Language]['words']['ProgressLevel']),
+        progressLevel0:         Object(Terms[Language]['words']['ProgressLevel0']),
+        progressLevel1:         Object(Terms[Language]['words']['ProgressLevel1']),
+        progressLevel2:         Object(Terms[Language]['words']['ProgressLevel2']),
+        progressLevel3:         Object(Terms[Language]['words']['ProgressLevel3']),
+        progressLevel4:         Object(Terms[Language]['words']['ProgressLevel4']),
+        effects:                Object(Terms[Language]['words']['Effects']),
+        expire:                 Object(Terms[Language]['words']['Expire']),
 
         // Messages
-        infectionMsg:           Terms[Language]['messages']['infection'],
-        progressLevelUpMsg:     Terms[Language]['messages']['progressLevelUp'],
-        curseExpireMsg:         Terms[Language]['messages']['curseExpire'],
-        cureCurseMsg:           Terms[Language]['messages']['cureCurse'],
-        makeAntiCurseMsg:       Terms[Language]['messages']['makeAntiCurse'],
-        infomationMsg:          Terms[Language]['messages']['infomation'],
-    }
+        infectionMsg:           Object(Terms[Language]['messages']['infection']),
+        progressLevelUpMsg:     Object(Terms[Language]['messages']['progressLevelUp']),
+        curseExpireMsg:         Object(Terms[Language]['messages']['curseExpire']),
+        cureCurseMsg:           Object(Terms[Language]['messages']['cureCurse']),
+        makeAntiCurseMsg:       Object(Terms[Language]['messages']['makeAntiCurse']),
+        infomationMsg:          Object(Terms[Language]['messages']['infomation']),
+    });
 
     Window_BattleLog.prototype.makeInfectionText = function(target) {
         target.result().addedCurseObjects().forEach(function(curseObj) {
@@ -1145,7 +1156,7 @@ Imported.Majinai = {};
             }
             var fmt;
             fmt = TextManager.cureCurseMsg;
-            cureCurseMsg fmt.format(target.name(), progressName, progressLevelWord)
+            cureCurseMsg = fmt.format(target.name(), progressName, progressLevelWord)
             this.push('popBaseLine');
             this.push('pushBaseLine');
             this.push('addText', cureCurseMsg);
@@ -1163,7 +1174,7 @@ Imported.Majinai = {};
             var curseName = curse.getName();
             var fmt;
             fmt = TextManager.makeAntiCurseMsg;
-            makeAntiCurseMsg fmt.format(target.name(), curseName, TextManager.antiCurse)
+            makeAntiCurseMsg = fmt.format(target.name(), curseName, TextManager.antiCurse)
             this.push('popBaseLine');
             this.push('pushBaseLine');
             this.push('addText', makeAntiCurseMsg);
@@ -1206,7 +1217,7 @@ Imported.Majinai = {};
             if(target.result.progressVisibility) {
                 this.push('addText', this.makeProgressLevelUpText(target));
             }
-        }
+        });
     };
 
     Window_BattleLog.prototype.displayCurseExpire = function(target) {
@@ -1233,64 +1244,74 @@ Imported.Majinai = {};
 
     var _Window_BattleLog_displayActionResults = Window_BattleLog.prototype.displayActionResults;
     Window_BattleLog.prototype.displayActionResults = function(subject, target) {
-        _Window_BattleLog_displayActionResults(subject, target) {
-            if (target.result().used) {
-                this.push('pushBaseLine');
-                this.displayCritical(target);
-                this.push('popupDamage', target);
-                this.push('popupDamage', subject);
-                this.displayDamage(target);
-                this.displayAffectedCurses(target);
-                this.displayAffectedStatus(target);
-                this.displayFailure(target);
-                this.push('waitForNewLine');
-                this.push('popBaseLine');
-            }
+        if (target.result().used) {
+            this.push('pushBaseLine');
+            this.displayCritical(target);
+            this.push('popupDamage', target);
+            this.push('popupDamage', subject);
+            this.displayDamage(target);
+            this.displayAffectedCurses(target);
+            this.displayAffectedStatus(target);
+            this.displayFailure(target);
+            this.push('waitForNewLine');
+            this.push('popBaseLine');
         }
     };
 
     var _BattleManager_processTurn = BattleManager.processTurn;
     BattleManager.processTurn = function() {
-        _BattleManager_processTurn() {
-            var subject = this._subject;
-            var action = subject.currentAction();
-            if (action) {
-                action.prepare();
-                if (action.isValid()) {
-                    this.startAction();
-                }
-                subject.removeCurrentAction();
-            } else {
-                subject.onAllActionsEnd();
-                this.refreshStatus();
-                this._logWindow.displayAutoAffectedCurses(subject);
-                this._logWindow.displayAutoAffectedStatus(subject);
-                this._logWindow.displayCurrentState(subject);
-                this._logWindow.displayRegeneration(subject);
-                this._subject = this.getNextSubject();
+        var subject = this._subject;
+        var action = subject.currentAction();
+        if (action) {
+            action.prepare();
+            if (action.isValid()) {
+                this.startAction();
             }
+            subject.removeCurrentAction();
+        } else {
+            subject.onAllActionsEnd();
+            this.refreshStatus();
+            this._logWindow.displayAutoAffectedCurses(subject);
+            this._logWindow.displayAutoAffectedStatus(subject);
+            this._logWindow.displayCurrentState(subject);
+            this._logWindow.displayRegeneration(subject);
+            this._subject = this.getNextSubject();
         }
     };
 
     var _BattleManager_endTurn = BattleManager.endTurn;
     BattleManager.endTurn = function() {
-        _BattleManager_endTurn() {
-            this._phase = 'turnEnd';
-            this._preemptive = false;
-            this._surprise = false;
-            this.allBattleMembers().forEach(function(battler) {
-                battler.onTurnEnd();
-                this.refreshStatus();
-                this._logWindow.displayAutoAffectedCurses(battler);
-                this._logWindow.displayAutoAffectedStatus(battler);
-                this._logWindow.displayRegeneration(battler);
-            }, this);
-        }
+        this._phase = 'turnEnd';
+        this._preemptive = false;
+        this._surprise = false;
+        this.allBattleMembers().forEach(function(battler) {
+            battler.onTurnEnd();
+            this.refreshStatus();
+            this._logWindow.displayAutoAffectedCurses(battler);
+            this._logWindow.displayAutoAffectedStatus(battler);
+            this._logWindow.displayRegeneration(battler);
+        }, this);
     };
 
     var _Game_ActionResult_clear = Game_ActionResult.prototype.clear;
     Game_ActionResult.prototype.clear = function() {
-        _Game_ActionResult_clear();
+        this.used = false;
+        this.missed = false;
+        this.evaded = false;
+        this.physical = false;
+        this.drain = false;
+        this.critical = false;
+        this.success = false;
+        this.hpAffected = false;
+        this.hpDamage = 0;
+        this.mpDamage = 0;
+        this.tpDamage = 0;
+        this.addedStates = [];
+        this.removedStates = [];
+        this.addedBuffs = [];
+        this.addedDebuffs = [];
+        this.removedBuffs = [];
+
         this.addedCurses = [];
         this.makedAntiCurses = [];
         this.removedCurses = [];
@@ -1397,24 +1418,32 @@ Imported.Majinai = {};
     };
 
     Game_Action.prototype.isInfection = function() {
-        return this.subject.hasInfection();
+        return this.subject().hasInfection();
     };
 
     Game_Action.prototype.isHpDamageInfectionTrigger = function() {
-        return this.subject.hasHpDamageTrigger();
+        return this.subject().hasHpDamageTrigger();
     };
 
     Game_Action.prototype.isMpDamageInfectionTrigger = function() {
-        return this.subject.hasMpDamageTrigger();
+        return this.subject().hasMpDamageTrigger();
     };
 
     Game_Action.prototype.isTpDamageInfectionTrigger = function() {
-        return this.subject.hasTpDamageTrigger();
+        return this.subject().hasTpDamageTrigger();
     };
 
     var _Game_Action_executeHpDamage = Game_Action.prototype.executeHpDamage;
     Game_Action.prototype.executeHpDamage = function(target, value) {
-        _Game_Action_executeHpDamage(target, value);
+        if (this.isDrain()) {
+            value = Math.min(target.hp, value);
+        }
+        this.makeSuccess(target);
+        target.gainHp(-value);
+        if (value > 0) {
+            target.onDamage(value);
+        }
+        this.gainDrainedHp(value);
 
         if(target.hasCurses() && target.hasHpDamageProgressTrigger()) {
             var curses;
@@ -1436,7 +1465,7 @@ Imported.Majinai = {};
 
         if(this.isInfection() && this.isHpDamageInfectionTrigger()) {
             var curses;
-            curses = this.subject.curses.filter(function(elem) {
+            curses = this.subject().curses.filter(function(elem) {
                 return elem.hasHpDamageTrigger();
             });
             var curseId;
@@ -1455,7 +1484,14 @@ Imported.Majinai = {};
 
     var _Game_Action_executeMpDamage = Game_Action.prototype.executeMpDamage;
     Game_Action.prototype.executeMpDamage = function(target, value) {
-        _Game_Action_executeMpDamage(target, value);
+        if (!this.isMpRecover()) {
+            value = Math.min(target.mp, value);
+        }
+        if (value !== 0) {
+            this.makeSuccess(target);
+        }
+        target.gainMp(-value);
+        this.gainDrainedMp(value);
 
         if(target.hasCurses() && target.hasMpDamageProgressTrigger()) {
             var curses;
@@ -1477,7 +1513,7 @@ Imported.Majinai = {};
 
         if(this.isInfection() && this.isMpDamageInfectionTrigger()) {
             var curses;
-            curses = this.subject.curses.filter(function(elem) {
+            curses = this.subject().curses.filter(function(elem) {
                 return elem.hasMpDamageTrigger();
             });
             var curseId;
@@ -1495,7 +1531,7 @@ Imported.Majinai = {};
     };
 
     DataManager._databaseFiles.push(
-        {name:  '$dataAntiCurses',  src:    'AntiCurse.json'}
+        {name:  '$dataAntiCurses',  src:    'AntiCurses.json'}
     )
     DataManager._databaseFiles.push(
         {name:  '$dataCurses',  src:    'Curses.json'}
@@ -1504,7 +1540,7 @@ Imported.Majinai = {};
         {name:  '$dataProgress',  src:    'Progress.json'}
     )
     DataManager._databaseFiles.push(
-        {name:  '$dataTriggers',  src:    'triggers().json'}
+        {name:  '$dataTriggers',  src:    'Triggers.json'}
     )
 
 
