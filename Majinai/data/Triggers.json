@@ -3,11 +3,11 @@
     {
         "id":   1,
         "type": "HP_damage",
-        "rate": 100
+        "rate": 90
     },
     {
         "id":   2,
         "type": "HP_damage",
-        "rate": 40
+        "rate": 20
     }
 ]

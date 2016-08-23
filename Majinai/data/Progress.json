@@ -5,7 +5,7 @@
         "name": "ゾンビ化",
         "description":  "感染すると徐々にゾンビ化します。感染性と潜伏期間があります。",
         "count":    0,
-        "limit":    70,
+        "limit":    100,
         "level":    0,
         "maxLevel": 4,
         "effects":  [
