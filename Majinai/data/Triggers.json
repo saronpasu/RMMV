@@ -1,7 +1,13 @@
 [
+    null,
     {
         "id":   1,
         "type": "HP_damage",
-        "limit": 40
+        "rate": 100
+    },
+    {
+        "id":   2,
+        "type": "HP_damage",
+        "rate": 40
     }
 ]

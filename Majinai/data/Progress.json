@@ -1,4 +1,5 @@
 [
+    null,
     {
         "id":   1,
         "name": "ゾンビ化",
@@ -25,7 +26,7 @@
                 "expireLevel":  4
             }
         ],
-        "progressTriggers":[1],
+        "progressTriggers":[2],
         "curseId":  1
     }
 ]

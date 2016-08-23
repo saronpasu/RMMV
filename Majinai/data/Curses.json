@@ -1,9 +1,10 @@
 [
+    null,
     {
         "id":1,
         "name": "ゾンビ化",
         "description":  "感染すると徐々にゾンビ化します。感染性と潜伏期間があります。",
-        "visiblity":    {
+        "visibility":    {
             "nameHidden"            :   false,
             "infectionHidden"       :   false,
             "beforeExpireHidden"    :   false
@@ -19,7 +20,7 @@
         "id":2,
         "name": "ゾンビ化",
         "description":  "感染すると徐々にゾンビ化します。感染性と潜伏期間があります。",
-        "visiblity":    {
+        "visibility":    {
             "nameHidden"            :   true,
             "infectionHidden"       :   true,
             "beforeExpireHidden"    :   true
