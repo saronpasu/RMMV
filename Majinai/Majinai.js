@@ -161,7 +161,7 @@ Imported.Majinai = {};
             return trigger;
         });
         this.incubation = this.data.incubation;
-        this.natureAntiCurseRate = this.data.natureAntiCurseRate;
+        this.natureAntiCurseRate = Number(this.data.natureAntiCurseRate);
         this.progressId = this.data.progressId;
         this.progress = function() {
             return new Progress(this.progressId);
@@ -247,14 +247,13 @@ Imported.Majinai = {};
         this.name = this.data.name;
         this.description = this.data.description;
         this.count = 0;
-        this.limit = this.data.limit;
+        this.limit = Number(this.data.limit);
         this.level = 0;
-        this.maxLevel = this.data.maxLevel;
+        this.maxLevel = Number(this.data.maxLevel);
         this.progressTriggers = this.data.progressTriggers.map(function(elem) {
             var trigger = new Trigger(elem);
             return trigger;
         });
-        this.rate = this.data.rate;
         this.curseId = this.data.curseId;
         this.curse = new Curse(this.data.curseId);
         this.effects = this.data.effects.map(function(elem) {
@@ -341,10 +340,10 @@ Imported.Majinai = {};
 
     Progress.prototype.levelUp = function() {
         if(this.level == this.maxLevel) {
-            this.resetCount;
-            return;
+            this.resetCount();
+            return false;
         }else {
-            this.resetCount;
+            this.resetCount();
             this.level += 1;
         }
     };
@@ -420,7 +419,7 @@ Imported.Majinai = {};
         // ステートを付与する
         var effects = this.getActiveEffects();
         if (effects.length == 0) {
-            return;
+            return false;
         }
         for(i=0;i<effects.length;i++) {
             target.addState(effects[i].effect);
@@ -440,7 +439,7 @@ Imported.Majinai = {};
         this.data = $dataTriggers[this.id];
 
         this.type = this.data.type;
-        this.limit = this.data.limit;
+        this.rate = Number(this.data.rate);
     };
 
     Trigger.prototype.isHpDamage = function() {
@@ -583,7 +582,7 @@ Imported.Majinai = {};
     Game_BattlerBase.prototype.addNewCurse = function(curseId) {
         // 呪いと症状を付与する
         if (this.hasCurse(curseId)) {
-            return;
+            return false;
         }
         this._curses.push(curseId);
         var curse = new Curse(curseId);
@@ -601,21 +600,21 @@ Imported.Majinai = {};
         // 感染を受ける判定 感染率(能動) -> 免疫(受動) -> 成否 の流れ
         // 既に感染しているか
         if(this.hasCurse(curseId)) {
-            return;
+            return false;
         }
         // 感染成功テスト
         var curse = $dataCurses[curseId];
         var trigger = $dataTriggers[triggerId];
         var curseRate = trigger.rate;
         if(trigger.rate <= 0) {
-            return;
+            return false;
         }else if (trigger.rate > 100) {
             curseRate = 100;
         }
 
         var infectionResult = (Math.randomInt(100) <= curseRate);
         if(!infectionResult) {
-            return;
+            return false;
         }
         // 免疫を得ているか
         if(this.hasAntiCurse(curseId)) {
@@ -633,7 +632,7 @@ Imported.Majinai = {};
         }
 
         if (!infectionResult) {
-            return;
+            return false;
         }
         // 感染成功時の処理
         this.addCurse(curseId);
@@ -656,7 +655,7 @@ Imported.Majinai = {};
         // 症状を治療する判定 治療成功率(能動) -> 成否 の流れ
         // 感染しているか
         if(this.hasCurse(curseId)) {
-            return;
+            return false;
         }
         // 対応した治療方法か
         var source = action.item.note;
@@ -671,17 +670,17 @@ Imported.Majinai = {};
             cureCurseRate = Number(cureCurseRatePattern.exec(source)[1]);
         }
         if(curseId != targetCurseId) {
-            return;
+            return false;
         }
         if(curseCureRate <= 0) {
-            return;
+            return false;
         }else if (curseCureRate > 100) {
             curseCureRate = 100;
         }
         // 治療判定
         var cureResult = (Math.randomInt(100) <= curseCureRate);
         if(!cureResult) {
-            return;
+            return false;
         }
         // 回復処理
         this.removeCurse(curseId);
@@ -706,7 +705,7 @@ Imported.Majinai = {};
         var natureAntiCurseRate = curse.natureAntiCurseRate;
         var i;
         if(natureAntiCurseRate <= 0) {
-            return;
+            return false;
         }else if (natureAntiCurseRate > 100) {
             natureAntiCurseRate = 100;
         }
@@ -720,7 +719,7 @@ Imported.Majinai = {};
             }
         }
         if(this.hasAntiCurse(antiCurse.id)) {
-            return;
+            return false;
         }
         if(antiCurse) {
             this.addAntiCurse(antiCurse.id);
@@ -754,7 +753,7 @@ Imported.Majinai = {};
         // 症状を進行させる
         // 感染しているかどうか
         if(!this.hasCurse(curseId)) {
-            return;
+            return false;
         }
         // 対応するトリガーかどうか
         var curse = new Curse(curseId);
@@ -768,10 +767,28 @@ Imported.Majinai = {};
             }
         }
         if (!trigger) {
-            return;
+            return false;
+        }
+        // 免疫を得ているか
+        var progressResult;
+        if(this.hasAntiCurse(curseId)) {
+            antiCurse = this.findAntiCurse(curseId);
+            if (antiCurse) {
+                // 免疫による防護成功テスト
+                var antiCurseRate = antiCurse.rate;
+                if(antiCurseRate <= 0) {
+                    antiCurseRate = 0;
+                }else if (antiCurseRate > 100) {
+                    antiCurseRate = 100;
+                }
+                progressResult = (Math.randomInt(100) <= antiCurseRate);
+            }
+        }
+        if(progressResult) {
+            return false;
         }
         // トリガーの値を取得
-        var rate = trigger.rate;
+        var rate = Number(trigger.rate);
         // 症状のカウンタにトリガーの値を加算
         var progresses = this.progresses();
         var progress;
@@ -783,7 +800,7 @@ Imported.Majinai = {};
         progress.count += rate;
         // 症状のレベルアップ処理
         if(progress.count >= progress.limit) {
-            this.progressLevelUp();
+            this.progressLevelUp(curseId);
         }
     };
 
@@ -1084,11 +1101,11 @@ Imported.Majinai = {};
     };
 
     Format.format = function () {
-        var self = arguments[0];
+        var template = arguments[0];
         var arr = Array.apply(null, arguments);
         arr.shift();
         var args = arr;
-        return self.replace(/%([0-9]+)/g, function(s, n) {
+        return template.replace(/%([0-9]+)/g, function(s, n) {
             return args[Number(n) - 1];
         });
     }
@@ -1110,49 +1127,57 @@ Imported.Majinai = {};
     Window_BattleLog.prototype.makeProgressLevelUpText = function(target) {
         var progressLevelUpMsg;
         target.result().progressLevelUpObjects().forEach(function(progObj) {
-            var progress = new Progress(progObj.id);
+            var progress = target.progresses().filter(function(elem){return elem.id == progObj.id})[0];
             var curse = new Curse(progress.curseId);
             var progressVisible = curse.isProgressVisible();
             var expire = progress.isExpire();
             if (!expire && !progressVisible) {
                 return false;
             }
+            if (progress.level == progress.maxLevel) {
+                return false;
+            }
             var curseName = curse.getName;
-            var progressName = curse.progress.getName();
-            var progressLevel = curse.progress.Level;
+            var progressName = progress.getName();
+            var progressLevel = progress.level;
             var progressLevelWord;
             var beforeProgressLevelWord
-            switch (progrellLevel) {
+            switch (progressLevel) {
+                case 0:
+                    beforeProgressLevelWord = Format.data.progressLevel0;
+                    progressLevelWord = Format.data.progressLevel1;
+                    break;
                 case 1:
-                    beforeProgressLevelWord = Format.progressLevel0;
-                    progressLevelWord = Format.progressLevel1;
+                    beforeProgressLevelWord = Format.data.progressLevel1;
+                    progressLevelWord = Format.data.progressLevel2;
                     break;
                 case 2:
-                    beforeProgressLevelWord = Format.progressLevel1;
-                    progressLevelWord = Format.progressLevel2;
+                    beforeProgressLevelWord = Format.data.progressLevel2;
+                    progressLevelWord = Format.data.progressLevel3;
                     break;
                 case 3:
-                    beforeProgressLevelWord = Format.progressLevel2;
-                    progressLevelWord = Format.progressLevel3;
+                    beforeProgressLevelWord = Format.data.progressLevel3;
+                    progressLevelWord = Format.data.progressLevel4;
                     break;
                 case 4:
-                    beforeProgressLevelWord = Format.progressLevel3;
-                    progressLevelWord = Format.progressLevel4;
+                    beforeProgressLevelWord = Format.data.progressLevel4;
+                    progressLevelWord = Format.data.progressLevel5;
                     break;
                 default:
+                    beforeProgressLevelWord = Format.data.unkonw;
+                    progressLevelWord = Format.data.unkown;
 
             }
             var fmt;
-            fmt = Format.progressLevelUpMsg;
+            fmt = Format.data.progressLevelUpMsg;
             progressLevelUpMsg = Format.format(
                 fmt,
 
                 target.name(),
-                Format.progressName,
+                progressName,
                 beforeProgressLevelWord,
-                Format.ProgressName,
                 progressLevelWord,
-                Format.progress);
+                Format.data.progress);
         });
         return progressLevelUpMsg;
     };
@@ -1163,9 +1188,9 @@ Imported.Majinai = {};
             var curse = new Curse(curseObj.id);
             var curseName = curse.getName();
             var fmt;
-            fmt = Format.curseExpireMsg;
+            fmt = Format.data.curseExpireMsg;
             curseExpireMsg = Format.format(
-                fmt, target.name(), curseName, Format.infection, Format.expire);
+                fmt, target.name(), curseName, Format.data.infection, Format.data.expire);
         });
         return curseExpireMsg;
     };
@@ -1175,30 +1200,31 @@ Imported.Majinai = {};
         target.result().removedCurseObjects().forEach(function(curseObj) {
             var curse = new Curse(curseObj.id);
             var curseName = curse.getName();
-            var progressName = curse.progress.getName();
-            var progressLevel = curse.progress.progressLevel;
+            var progress = target.progresses().filter(function(elem){return elem.curseId == curse.id})[0];
+            var progressName = progress.getName();
+            var progressLevel = progress.progressLevel;
             var progressLevelWord;
-            switch (progrellLevel) {
+            switch (progressLevel) {
                 case 0:
-                    progressLevelWord = Format.progressLevel0;
+                    progressLevelWord = Format.data.progressLevel0;
                     break;
                 case 1:
-                    progressLevelWord = Format.progressLevel1;
+                    progressLevelWord = Format.data.progressLevel1;
                     break;
                 case 2:
-                    progressLevelWord = Format.progressLevel2;
+                    progressLevelWord = Format.data.progressLevel2;
                     break;
                 case 3:
-                    progressLevelWord = Format.progressLevel3;
+                    progressLevelWord = Format.data.progressLevel3;
                     break;
                 case 4:
-                    progressLevelWord = Format.progressLevel4;
+                    progressLevelWord = Format.data.progressLevel4;
                     break;
                 default:
 
             }
             var fmt;
-            fmt = Format.cureCurseMsg;
+            fmt = Format.data.cureCurseMsg;
             cureCurseMsg = Format.format(
                 fmt, target.name(), progressName, progressLevelWord);
         });
@@ -1214,9 +1240,9 @@ Imported.Majinai = {};
             }
             var curseName = curse.getName();
             var fmt;
-            fmt = Format.makeAntiCurseMsg;
+            fmt = Format.data.makeAntiCurseMsg;
             makeAntiCurseMsg = Format.format(
-                fmt, target.name(), curseName, Format.antiCurse);
+                fmt, target.name(), curseName, Format.data.antiCurse);
         });
         return makeAntiCurseMsg;
     };
@@ -1274,7 +1300,7 @@ Imported.Majinai = {};
             }else {
                 return false;
             }
-        });
+        }, this);
     };
 
     Window_BattleLog.prototype.displayCurseExpire = function(target) {
