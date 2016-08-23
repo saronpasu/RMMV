@@ -100,7 +100,7 @@ Imported.Majinai = {};
 
     AntiCurse.prototype.setup = function(antiCurseId) {
         this.id = antiCurseId;
-        this.data = $dataAnticurses[this.id];
+        this.data = $dataAntiCurses[this.id];
 
         this.name = this.data.name;
         this.description = this.data.description;
@@ -490,7 +490,7 @@ Imported.Majinai = {};
                 'infection' :   '%1は%2に%3した。',
                 'progressLevelUp'   :   '%1の%2[%3]は%2[%4]に%5した。',
                 'curseExpire'   :   '%1は$2を%3した。',
-                'cureCurse' :   '%1の%2[%3]は回復した。',
+                'cureCurse' :   '%1の%2は回復した。',
                 'makeAntiCurse' :   '%1は%2への%3を得た。',
                 'infomation'    :   '%1は%2[%3]に%4している。',
             }
@@ -522,16 +522,6 @@ Imported.Majinai = {};
     var _Game_BattlerBase_initMembers = Game_BattlerBase.prototype.initMembers
     Game_BattlerBase.prototype.initMembers = function() {
         _Game_BattlerBase_initMembers.call(this);
-
-        /*
-        this._hp = 1;
-        this._mp = 0;
-        this._tp = 0;
-        this._hidden = false;
-        this.clearParamPlus();
-        this.clearStates();
-        this.clearBuffs();
-        */
 
         this.crearCurse();
         this.crearAntiCurse();
@@ -640,10 +630,19 @@ Imported.Majinai = {};
 
     Game_BattlerBase.prototype.removeCurse = function(curseId) {
         // 症状を除去する(強制)
-        var index = this._curses.indexOf(curseId);
-        if (index >= 0) {
-            this._curses.splice(index, 1);
+        var index;
+        var i;
+        var curses = this._curses;
+        for(i=0;i<curses.length;i++) {
+            if(curses[i].id && curses[i].id == curseId) {
+                index = i;
+            }
         }
+        if (index >= 0) {
+            var result = this._curses.splice(index, 1);
+        }
+        this.refresh();
+        this._result.pushRemovedCurse(curseId);
     };
 
     Game_BattlerBase.prototype.removeAllCurse = function() {
@@ -654,31 +653,37 @@ Imported.Majinai = {};
     Game_BattlerBase.prototype.cureCurse = function(action, curseId) {
         // 症状を治療する判定 治療成功率(能動) -> 成否 の流れ
         // 感染しているか
-        if(this.hasCurse(curseId)) {
+        if(!this.hasCurse(curseId)) {
             return false;
         }
         // 対応した治療方法か
-        var source = action.item.note;
-        var targetCursePattern = new RegExp('cureCurseId:(\d+)', 'g');
-        var cureCurseRatePattern = new RegExp('cureCurseRate:(\d+)', 'g');
+        var source = action.item().note;
+        var targetCursePattern = new RegExp('cureCurseId:(\\d+)', 'g');
+        var cureCurseRatePattern = new RegExp('cureCurseRate:(\\d+)', 'g');
         var targetCurseId;
         if (targetCursePattern.test(source)) {
+            targetCursePattern = new RegExp('cureCurseId:(\\d+)', 'g');
             targetCurseId = Number(targetCursePattern.exec(source)[1]);
+        }else{
+            return false;
         }
         var cureCurseRate;
         if (cureCurseRatePattern.test(source)) {
+            cureCurseRatePattern = new RegExp('cureCurseRate:(\\d+)', 'g');
             cureCurseRate = Number(cureCurseRatePattern.exec(source)[1]);
+        }else{
+            return false;
         }
         if(curseId != targetCurseId) {
             return false;
         }
-        if(curseCureRate <= 0) {
-            return false;
-        }else if (curseCureRate > 100) {
-            curseCureRate = 100;
+        if(cureCurseRate < 0) {
+            cureCurseRate = 0;
+        }else if (cureCurseRate > 100) {
+            cureCurseRate = 100;
         }
         // 治療判定
-        var cureResult = (Math.randomInt(100) <= curseCureRate);
+        var cureResult = (Math.randomInt(100) <= cureCurseRate);
         if(!cureResult) {
             return false;
         }
@@ -701,6 +706,11 @@ Imported.Majinai = {};
 
     Game_BattlerBase.prototype.makeAntiCurse = function(curseId) {
         // 免疫を得る判定 免疫獲得率 -> 成否 の流れ
+        // 既に免疫を得ているか
+        var natureAntiCurses = this.antiCurses();
+        if(natureAntiCurses.filter(function(elem){return elem.curseId == curseId}).length != 0) {
+            return false;
+        }
         var curse = new Curse(curseId);
         var natureAntiCurseRate = curse.natureAntiCurseRate;
         var i;
@@ -713,7 +723,7 @@ Imported.Majinai = {};
         var antiCurse;
         if(makeAntiCurseResult) {
             for(i=0;i<$dataAntiCurses.length;i++) {
-                if($dataAntiCurses[i].targetId == curseId) {
+                if($dataAntiCurses[i] && $dataAntiCurses[i].curseId == curseId) {
                     antiCurse = $dataAntiCurses[i];
                 }
             }
@@ -1025,14 +1035,7 @@ Imported.Majinai = {};
 
     var _Game_Enemy_setup = Game_Enemy.prototype.setup;
     Game_Enemy.prototype.setup = function(enemyId, x, y) {
-        // _Game_Enemy_setup.call(this);
-
-        // /*
-        this._enemyId = enemyId;
-        this._screenX = x;
-        this._screenY = y;
-        this.recoverAll();
-        // */
+        _Game_Enemy_setup.bind(this, enemyId, x, y).call();
 
         // メモ解析
         var source = this.enemy().note;
@@ -1202,31 +1205,10 @@ Imported.Majinai = {};
             var curseName = curse.getName();
             var progress = target.progresses().filter(function(elem){return elem.curseId == curse.id})[0];
             var progressName = progress.getName();
-            var progressLevel = progress.progressLevel;
-            var progressLevelWord;
-            switch (progressLevel) {
-                case 0:
-                    progressLevelWord = Format.data.progressLevel0;
-                    break;
-                case 1:
-                    progressLevelWord = Format.data.progressLevel1;
-                    break;
-                case 2:
-                    progressLevelWord = Format.data.progressLevel2;
-                    break;
-                case 3:
-                    progressLevelWord = Format.data.progressLevel3;
-                    break;
-                case 4:
-                    progressLevelWord = Format.data.progressLevel4;
-                    break;
-                default:
-
-            }
             var fmt;
             fmt = Format.data.cureCurseMsg;
             cureCurseMsg = Format.format(
-                fmt, target.name(), progressName, progressLevelWord);
+                fmt, target.name(), progressName);
         });
         return cureCurseMsg;
     };
@@ -1234,7 +1216,8 @@ Imported.Majinai = {};
     Window_BattleLog.prototype.makeMakeAntiCurseText = function(target) {
         var makeAntiCurseMsg;
         target.result().makedAntiCurseObjects().forEach(function(antiCurseObj) {
-            var antiCurse = new AntiCurse(antiCurseId);
+            var antiCurse = new AntiCurse(antiCurseObj.id);
+            var curse = new Curse(antiCurse.curseId);
             if(!antiCurse.isVisible()) {
                 return false;
             }
@@ -1261,6 +1244,7 @@ Imported.Majinai = {};
             this.push('popBaseLine');
             this.push('pushBaseLine');
             this.push('addText', msg);
+            this.push('waitForEffect');
         }
     };
 
@@ -1271,6 +1255,7 @@ Imported.Majinai = {};
                 this.push('popBaseLine');
                 this.push('pushBaseLine');
                 this.push('addText', msg);
+                this.push('waitForEffect');
             }else {
                 return false;
             }
@@ -1279,11 +1264,12 @@ Imported.Majinai = {};
 
     Window_BattleLog.prototype.displayMakedAntiCurses = function(target) {
         target.result().makedAntiCurseObjects().forEach(function(antiCurse) {
-            var msg = this.makeAntiCurseText(target);
+            var msg = this.makeMakeAntiCurseText(target);
             if (msg) {
                 this.push('popBaseLine');
                 this.push('pushBaseLine');
                 this.push('addText', msg);
+                this.push('waitForEffect');
             }else {
                 return false;
             }
@@ -1297,6 +1283,7 @@ Imported.Majinai = {};
                 this.push('popBaseLine');
                 this.push('pushBaseLine');
                 this.push('addText', msg);
+                this.push('waitForEffect');
             }else {
                 return false;
             }
@@ -1309,16 +1296,15 @@ Imported.Majinai = {};
             this.push('popBaseLine');
             this.push('pushBaseLine');
             this.push('addText', msg);
+            this.push('waitForEffect');
         }
     };
 
     Window_BattleLog.prototype.displayAffectedCurses = function(target) {
-        if (target.result().isCursesAffected()) {
-            this.push('pushBaseLine');
-            this.displayChangedCurses(target);
-            this.push('waitForNewLine');
-            this.push('popBaseLine');
-        }
+        this.push('pushBaseLine');
+        this.displayChangedCurses(target);
+        this.push('waitForNewLine');
+        this.push('popBaseLine');
     };
 
     Window_BattleLog.prototype.displayAutoAffectedCurses = function(target) {
@@ -1381,35 +1367,11 @@ Imported.Majinai = {};
     Game_ActionResult.prototype.clear = function() {
         _Game_ActionResult_clear.call(this);
 
-        /*
-        this.used = false;
-        this.missed = false;
-        this.evaded = false;
-        this.physical = false;
-        this.drain = false;
-        this.critical = false;
-        this.success = false;
-        this.hpAffected = false;
-        this.hpDamage = 0;
-        this.mpDamage = 0;
-        this.tpDamage = 0;
-        this.addedStates = [];
-        this.removedStates = [];
-        this.addedBuffs = [];
-        this.addedDebuffs = [];
-        this.removedBuffs = [];
-        */
-
         this.addedCurses = [];
         this.makedAntiCurses = [];
-        this.removedCurses = [];
+        this.removedCurses =  [];
         this.progressLevelUp = [];
         this.expireCurse = [];
-
-        this.curseVisibility = [];
-        this.antiCurseVisibility = [];
-        this.progressVisibility = [];
-
     };
 
     Game_ActionResult.prototype.addedCurseObjects = function() {
@@ -1453,15 +1415,17 @@ Imported.Majinai = {};
     };
 
     Game_ActionResult.prototype.pushAddedCurse = function(curseId) {
-        var curse = new Curse(curseId);
         if (!this.isCurseAdded(curseId)) {
             this.addedCurses.push(curseId);
         }
     };
 
+    Game_ActionResult.prototype.isAntiCurseMaked = function(curseId) {
+        return this.makedAntiCurses.contains(curseId);
+    };
+
     Game_ActionResult.prototype.pushMakedAntiCurse = function(antiCurseId) {
-        var antiCurse = new AntiCurse(antiCurseId);
-        if (!this.isCurseMake(antiCurseId)) {
+        if (!this.isAntiCurseMaked(antiCurseId)) {
             this.makedAntiCurses.push(antiCurseId);
         }
     };
@@ -1471,7 +1435,6 @@ Imported.Majinai = {};
     };
 
     Game_ActionResult.prototype.pushRemovedCurse = function(curseId) {
-        var curse = new Curse(curseId);
         if (!this.isCurseRemoved(curseId)) {
             this.removedCurses.push(curseId);
         }
@@ -1515,24 +1478,12 @@ Imported.Majinai = {};
 
     var _Game_Action_executeHpDamage = Game_Action.prototype.executeHpDamage;
     Game_Action.prototype.executeHpDamage = function(target, value) {
-        // _Game_Action_executeHpDamage.call(this);
-
-        // /*
-        if (this.isDrain()) {
-            value = Math.min(target.hp, value);
-        }
-        this.makeSuccess(target);
-        target.gainHp(-value);
-        if (value > 0) {
-            target.onDamage(value);
-        }
-        this.gainDrainedHp(value);
-        // */
+        _Game_Action_executeHpDamage.bind(this, target, value).call();
 
         var i;
         var j;
 
-        if(target.hasCurses() && target.hasHpDamageProgressTrigger()) {
+        if(target.hasCurses() && target.hasHpDamageProgressTrigger() && value > 0) {
             var progresses;
             progresses = target.progresses().filter(function(elem) {
                 return elem.hasHpDamageTrigger();
@@ -1554,7 +1505,7 @@ Imported.Majinai = {};
             }
         }
 
-        if(this.isInfection() && this.isHpDamageInfectionTrigger()) {
+        if(this.isInfection() && this.isHpDamageInfectionTrigger() && value > 0) {
             var curses;
             curses = this.subject().curses().filter(function(elem) {
                 return elem.hasHpDamageTrigger();
@@ -1578,23 +1529,12 @@ Imported.Majinai = {};
 
     var _Game_Action_executeMpDamage = Game_Action.prototype.executeMpDamage;
     Game_Action.prototype.executeMpDamage = function(target, value) {
-        // _Game_Action_executeMpDamage.call(this);
-
-        // /*
-        if (!this.isMpRecover()) {
-            value = Math.min(target.mp, value);
-        }
-        if (value !== 0) {
-            this.makeSuccess(target);
-        }
-        target.gainMp(-value);
-        this.gainDrainedMp(value);
-        // */
+        _Game_Action_executeMpDamage.bind(this, target, value).call();
 
         var i;
         var j;
 
-        if(target.hasCurses() && target.hasHpDamageProgressTrigger()) {
+        if(target.hasCurses() && target.hasMpDamageProgressTrigger() && value > 0) {
             var progresses;
             progresses = target.progresses().filter(function(elem) {
                 return elem.hasMpDamageTrigger();
@@ -1616,7 +1556,7 @@ Imported.Majinai = {};
             }
         }
 
-        if(this.isInfection() && this.isHpDamageInfectionTrigger()) {
+        if(this.isInfection() && this.isMpDamageInfectionTrigger() && value > 0) {
             var curses;
             curses = this.subject().curses().filter(function(elem) {
                 return elem.hasMpDamageTrigger();
@@ -1637,6 +1577,23 @@ Imported.Majinai = {};
             }
         }
     };
+
+    var _Game_Action_apply = Game_Action.prototype.apply;
+    Game_Action.prototype.apply = function(target) {
+        _Game_Action_apply.bind(this, target).call();
+
+        // this.item.note を解析してあれこれする処理
+        var source = this.item().note;
+        var cureCursePattern = new RegExp('cureCurseId:(\\d+)', 'g');
+        var curseId;
+
+        if(cureCursePattern.test(source)) {
+            cureCursePattern = new RegExp('cureCurseId:(\\d+)', 'g');
+            curseId = cureCursePattern.exec(source)[1];
+            target.cureCurse(this, curseId);
+        }
+
+    }
 
     DataManager._databaseFiles.push(
         {name:  '$dataAntiCurses',  src:    'AntiCurses.json'},

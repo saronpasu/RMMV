@@ -13,7 +13,7 @@
         "infectionTriggers": [1],
         "incubation":   true,
         "incubationLevel":  0,
-        "natureAntiCurseRate":  0,
+        "natureAntiCurseRate":  100,
         "progressId":   1
     },
     {
