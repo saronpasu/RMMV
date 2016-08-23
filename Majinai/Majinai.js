@@ -356,7 +356,7 @@ Imported.Majinai = {};
         var activeEffects;
         activeEffects = this.effects.filter(function(elem) {
             return (elem.expireLevel >= this.level)
-        });
+        }, this);
         return activeEffects;
     };
 
@@ -408,22 +408,6 @@ Imported.Majinai = {};
             return elem.isTpCost();
         });
         return (triggers.length != 0);
-    };
-
-    Progress.prototype.countUp = function(value) {
-        this.count += value;
-    }
-
-    Progress.prototype.autoEffect = function(target) {
-        // activeEffects を for でぶん回す
-        // ステートを付与する
-        var effects = this.getActiveEffects();
-        if (effects.length == 0) {
-            return false;
-        }
-        for(i=0;i<effects.length;i++) {
-            target.addState(effects[i].effect);
-        }
     };
 
     Trigger = function() {
@@ -584,6 +568,7 @@ Imported.Majinai = {};
         // 症状を付与する(強制)
         this.addNewCurse(curseId);
         this._result.pushAddedCurse(curseId);
+        this.addActiveEffects();
     };
 
     Game_BattlerBase.prototype.receiveInfection = function(curseId, triggerId) {
@@ -608,8 +593,11 @@ Imported.Majinai = {};
         }
         // 免疫を得ているか
         if(this.hasAntiCurse(curseId)) {
-            antiCurse = this.findAntiCurse(curseId);
+            var antiCurse = this.findAntiCurse(curseId);
             if (antiCurse) {
+                if (antiCurse === true) {
+                    return false;
+                }
                 // 免疫による防護成功テスト
                 var antiCurseRate = antiCurse.rate;
                 if(antiCurseRate <= 0) {
@@ -623,9 +611,10 @@ Imported.Majinai = {};
 
         if (!infectionResult) {
             return false;
+        }else {
+            // 感染成功時の処理
+            this.addCurse(curseId);
         }
-        // 感染成功時の処理
-        this.addCurse(curseId);
     };
 
     Game_BattlerBase.prototype.removeCurse = function(curseId) {
@@ -641,12 +630,20 @@ Imported.Majinai = {};
         if (index >= 0) {
             var result = this._curses.splice(index, 1);
         }
-        this.refresh();
+        var progressId = this.progresses().filter(function(elem){return elem.curseId == curseId})[0].id;
+        this.removeActiveEffects(progressId);
         this._result.pushRemovedCurse(curseId);
     };
 
     Game_BattlerBase.prototype.removeAllCurse = function() {
         // 症状をすべて除去する(強制)
+        var progresses = this.progresses();
+        if(progresses.length != 0) {
+            var i;
+            for(i=0;i<progresses.length;i++) {
+                this.removeActiveEffects(progresses[i].id);
+            }
+        }
         this._curses = [];
     };
 
@@ -755,8 +752,9 @@ Imported.Majinai = {};
         progress.levelUp();
         var afterExpire = progress.isExpire();
         if (!beforeExpire && afterExpire) {
-            this.result.pushExpireCurse(curseId);
+            this._result.pushExpireCurse(curseId);
         }
+        this.addActiveEffects(progress.id);
     };
 
     Game_BattlerBase.prototype.progressGrowUp = function(triggerId, curseId) {
@@ -782,9 +780,12 @@ Imported.Majinai = {};
         // 免疫を得ているか
         var progressResult;
         if(this.hasAntiCurse(curseId)) {
-            antiCurse = this.findAntiCurse(curseId);
+            var antiCurse = this.findAntiCurse(curseId);
             if (antiCurse) {
                 // 免疫による防護成功テスト
+                if (antiCurse === true) {
+                    return false;
+                }
                 var antiCurseRate = antiCurse.rate;
                 if(antiCurseRate <= 0) {
                     antiCurseRate = 0;
@@ -813,6 +814,48 @@ Imported.Majinai = {};
             this.progressLevelUp(curseId);
         }
     };
+
+    Game_BattlerBase.prototype.addActiveEffects = function(progressId) {
+        // 症状を発火させる。アクティブなステートを自動で付与
+        // 症状の進行時、感染時にも起動する
+        if (this.progresses().length == 0) {
+            return false;
+        }
+        var progress;
+        progress = this.progresses().filter(function(elem){return elem.id == progressId})[0];
+        if (!progress) {
+            return false;
+        }
+        var activeEffects = progress.getActiveEffects();
+        var i;
+        activeEffects = activeEffects.filter(function(elem){return !!elem.effect});
+        for(i=0;i<activeEffects.length;i++) {
+            this.addState(activeEffects[i].effect.id);
+        }
+    }
+
+    Game_BattlerBase.prototype.removeActiveEffects = function(progressId) {
+        // TODO: write it
+        // 症状を鎮火させる。アクティブなステートを全て除去
+        // 症状を除去する(強制)時に連動する
+        if (this.progresses().length == 0) {
+            return false;
+        }
+        var progress;
+        progress = this.progresses().filter(function(elem){return elem.id == progressId})[0];
+        if (!progress) {
+            return false;
+        }
+        var activeEffects = progress.getActiveEffects();
+        console.log(activeEffects);
+        var i;
+        console.log(activeEffects);
+        activeEffects = activeEffects.filter(function(elem){return !!elem.effect});
+        for(i=0;i<activeEffects.length;i++) {
+            this.removeState(activeEffects[i].effect.id);
+        }
+    }
+
 
     Game_BattlerBase.prototype.hasInfection = function() {
         // 感染させるかどうか
@@ -849,7 +892,7 @@ Imported.Majinai = {};
             return true;
         }
         return (this.antiCurses().filter(function(antiCurse) {
-            return (antiCurse.targetId == curseId);
+            return (antiCurse.curseId == curseId);
         }).length != 0)
     };
 
@@ -939,7 +982,7 @@ Imported.Majinai = {};
         }
         var hitAntiCurse;
         for(i=0;i<antiCurses.length;i++) {
-            if(allAntiCurses[i].targetId == curseId) {
+            if(antiCurses[i].curseId == curseId) {
                 hitAntiCurse = antiCurses[i];
             }
         }
